@@ -7,6 +7,6 @@ CREATE TABLE musteriler (
     tc_kimlik_no CHAR(11) UNIQUE,
     telefon CHAR(11) UNIQUE NOT NULL,
     
-    olusturulma_tarihi DATETIME2,
-    guncellenme_tarihi DATETIME2
-)
+    olusturulma_tarihi DATETIME NOT NULL DEFAULT GETDATE(),
+    guncellenme_tarihi DATETIME
+);

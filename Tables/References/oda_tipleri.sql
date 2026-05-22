@@ -1,0 +1,4 @@
+CREATE TABLE oda_tipleri (
+    id INT PRIMARY KEY IDENTITY(1,1),
+    tip_adi NVARCHAR(50) UNIQUE NOT NULL
+);
