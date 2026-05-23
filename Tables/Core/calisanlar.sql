@@ -6,7 +6,13 @@ CREATE TABLE calisanlar (
 
     telefon CHAR(11) UNIQUE NOT NULL,
 
+    personel_tipi_id INT NOT NULL,
+
     ise_baslama_tarihi DATE NOT NULL,
-    olusturulma_tarihi DATETIME,
-    guncellenme_tarihi DATETIME
+
+    olusturulma_tarihi DATETIME NOT NULL DEFAULT GETDATE(),
+    guncellenme_tarihi DATETIME,
+
+    FOREIGN KEY (personel_tipi_id)
+        REFERENCES personel_tipleri(id)
 );
