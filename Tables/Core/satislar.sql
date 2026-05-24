@@ -4,7 +4,7 @@ CREATE TABLE satislar (
     ilan_id INT NOT NULL,
     alici_id INT,
     satici_id INT NOT NULL,
-    personel_id INT NOT NULL,
+    calisan_id INT NOT NULL,
 
     satis_tarihi DATE NOT NULL,
     satis_tutari DECIMAL(12,2) NOT NULL,
@@ -22,6 +22,6 @@ CREATE TABLE satislar (
     FOREIGN KEY (satici_id)
         REFERENCES musteriler(id),
 
-    FOREIGN KEY (personel_id)
+    FOREIGN KEY (calisan_id)
         REFERENCES calisanlar(id)
 );
