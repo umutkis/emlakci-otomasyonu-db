@@ -14,9 +14,10 @@ CREATE TABLE ilanlar (
     ilce NVARCHAR(50) NOT NULL,
     mahalle NVARCHAR(100),
     adres NVARCHAR(255),
+    yapim_yili INT NOT NULL,
 
     metrekare INT NOT NULL,
-    bina_yasi INT,
+    bina_yasi AS (YEAR(GETDATE()) - yapim_yili),
     bulundugu_kat INT,
     toplam_kat INT,
     balkon_sayisi INT,
