@@ -35,4 +35,3 @@ BEGIN
 END;
 GO
 
--- Daha eklenebilir.

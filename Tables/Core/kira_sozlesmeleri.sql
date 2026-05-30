@@ -7,13 +7,23 @@ CREATE TABLE kira_sozlesmeleri (
     calisan_id INT NOT NULL,
 
     sozlesme_baslangic_tarihi DATE NOT NULL,
-    sozlesme_suresi_ay INT NOT NULL DEFAULT 12,
-    sozlesme_bitis_tarihi AS DATEADD(MONTH, sozlesme_suresi_ay, sozlesme_baslangic_tarihi),
 
-    aylik_kira_tutari DECIMAL(12,2) NOT NULL,
+    sozlesme_suresi_ay INT NOT NULL DEFAULT 12
+        CHECK (sozlesme_suresi_ay > 0),
+
+    sozlesme_bitis_tarihi AS DATEADD(
+        MONTH,
+        sozlesme_suresi_ay,
+        sozlesme_baslangic_tarihi
+    ),
+
+    aylik_kira_tutari INT NOT NULL
+        CHECK (aylik_kira_tutari > 0),
 
     olusturulma_tarihi DATETIME NOT NULL DEFAULT GETDATE(),
     guncellenme_tarihi DATETIME,
+
+    CHECK (kiraci_id <> kiraya_veren_id),
 
     FOREIGN KEY (ilan_id)
         REFERENCES ilanlar(id),
