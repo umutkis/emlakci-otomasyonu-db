@@ -1,10 +1,17 @@
 CREATE TABLE calisanlar (
     id INT PRIMARY KEY IDENTITY(1,1),
 
-    ad NVARCHAR(50) NOT NULL,
-    soyad NVARCHAR(50) NOT NULL,
+    ad NVARCHAR(50) NOT NULL
+        CHECK (ad NOT LIKE '%[0-9]%'),
 
-    telefon CHAR(11) UNIQUE NOT NULL,
+    soyad NVARCHAR(50) NOT NULL
+        CHECK (soyad NOT LIKE '%[0-9]%'),
+
+    telefon VARCHAR(11) UNIQUE NOT NULL
+        CHECK (
+            LEN(telefon) = 11               -- 0555 555 55 55
+            AND telefon NOT LIKE '%[^0-9]%'
+        ),
 
     personel_tipi_id INT NOT NULL,
 
@@ -15,4 +22,4 @@ CREATE TABLE calisanlar (
 
     FOREIGN KEY (personel_tipi_id)
         REFERENCES personel_tipleri(id)
-);
+); 

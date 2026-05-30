@@ -7,8 +7,12 @@ CREATE TABLE satislar (
     personel_id INT NOT NULL,
 
     satis_tarihi DATE NOT NULL,
-    satis_tutari DECIMAL(12,2) NOT NULL,
-    kazanc_tutari DECIMAL(12,2) NOT NULL,
+
+    satis_tutari DECIMAL(12,2) NOT NULL
+        CHECK (satis_tutari > 0),
+
+    kazanc_tutari DECIMAL(12,2) NOT NULL
+        CHECK (kazanc_tutari >= 0),
 
     olusturulma_tarihi DATETIME NOT NULL DEFAULT GETDATE(),
     guncellenme_tarihi DATETIME,

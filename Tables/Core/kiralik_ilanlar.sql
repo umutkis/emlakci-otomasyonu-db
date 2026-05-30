@@ -2,8 +2,12 @@ CREATE TABLE kiralik_ilanlar (
     ilan_id INT PRIMARY KEY,
 
     esyali_mi BIT NOT NULL,
-    aidat_tutari DECIMAL(12,2),
-    depozito_tutari DECIMAL(12,2),
+
+    aidat_tutari INT
+        CHECK (aidat_tutari >= 0),
+
+    depozito_tutari INT
+        CHECK (depozito_tutari >= 0),
 
     FOREIGN KEY (ilan_id)
         REFERENCES ilanlar(id)

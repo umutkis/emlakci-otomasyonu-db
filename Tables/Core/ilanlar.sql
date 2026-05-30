@@ -2,7 +2,9 @@ CREATE TABLE ilanlar (
     id INT PRIMARY KEY IDENTITY(1,1),
 
     baslik NVARCHAR(100) NOT NULL,
-    fiyat DECIMAL(12,2) NOT NULL,
+
+    fiyat INT NOT NULL
+        CHECK (fiyat > 0),
 
     emlak_tipi_id INT NOT NULL,
     oda_tipi_id INT NOT NULL,
@@ -15,17 +17,33 @@ CREATE TABLE ilanlar (
     mahalle NVARCHAR(100),
     adres NVARCHAR(255),
 
-    metrekare INT NOT NULL,
-    bina_yasi INT,
+    metrekare INT NOT NULL
+        CHECK (metrekare > 0),
+
+    bina_yasi INT
+        CHECK (bina_yasi >= 0),
+
     bulundugu_kat INT,
-    toplam_kat INT,
-    balkon_sayisi INT,
-    wc_sayisi INT,
+
+    toplam_kat INT
+        CHECK (toplam_kat > 0),
+
+    balkon_sayisi INT
+        CHECK (balkon_sayisi >= 0),
+
+    wc_sayisi INT
+        CHECK (wc_sayisi > 0),
 
     ilan_durumu_id INT NOT NULL,
 
     olusturulma_tarihi DATETIME NOT NULL DEFAULT GETDATE(),
     guncellenme_tarihi DATETIME,
+
+    CHECK (
+        bulundugu_kat IS NULL
+        OR toplam_kat IS NULL
+        OR bulundugu_kat <= toplam_kat
+    ),
 
     FOREIGN KEY (emlak_tipi_id)
         REFERENCES emlak_tipleri(id),
