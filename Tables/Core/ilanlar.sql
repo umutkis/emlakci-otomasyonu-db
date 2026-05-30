@@ -16,6 +16,7 @@ CREATE TABLE ilanlar (
     ilce NVARCHAR(50) NOT NULL,
     mahalle NVARCHAR(100),
     adres NVARCHAR(255),
+    yapim_yili INT NOT NULL,
 
     metrekare INT NOT NULL
         CHECK (metrekare > 0),
