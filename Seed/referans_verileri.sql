@@ -16,7 +16,10 @@ VALUES
     ('Pasif'),
     ('Kiralandı'),
     ('Satıldı');  
-
+INSERT INTO ilan_tipleri (tip_adi)
+VALUES
+    ('Kiralık'),
+    ('Satılık');
 INSERT INTO tapu_durumlari (durum_adi)
 VALUES
     ('Kat Mülkiyetli'),
