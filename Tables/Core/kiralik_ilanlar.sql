@@ -10,5 +10,5 @@ CREATE TABLE kiralik_ilanlar (
         CHECK (depozito_tutari >= 0),
 
     FOREIGN KEY (ilan_id)
-        REFERENCES ilanlar(id)
+        REFERENCES ilanlar(id) ON DELETE CASCADE
 );

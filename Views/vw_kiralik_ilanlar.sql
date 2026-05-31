@@ -9,6 +9,7 @@ SELECT
     ilanlar.ilce AS [İlçe],
     ilanlar.mahalle AS [Mahalle],
     ilanlar.adres AS [Adres],
+    ilanlar.yapim_yili AS [Yapım Yılı],
 
     ilanlar.metrekare AS [Metrekare],
     ilanlar.bina_yasi AS [Bina Yaşı],

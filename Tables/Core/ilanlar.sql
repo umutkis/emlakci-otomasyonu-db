@@ -11,18 +11,20 @@ CREATE TABLE ilanlar (
     isitma_tipi_id INT NOT NULL,
     musteri_id INT NOT NULL,
     calisan_id INT NOT NULL,
+    ilan_tipi_id INT NOT NULL,
 
     il NVARCHAR(50) NOT NULL,
     ilce NVARCHAR(50) NOT NULL,
     mahalle NVARCHAR(100),
     adres NVARCHAR(255),
-    yapim_yili INT NOT NULL,
+    yapim_yili INT NOT NULL 
+    CHECK(yapim_yili > 1800 AND yapim_yili <= YEAR(GETDATE())),
 
     metrekare INT NOT NULL
         CHECK (metrekare > 0),
 
-    bina_yasi INT
-        CHECK (bina_yasi >= 0),
+    bina_yasi AS (YEAR(GETDATE()) - yapim_yili),
+
 
     bulundugu_kat INT,
 
@@ -62,5 +64,8 @@ CREATE TABLE ilanlar (
         REFERENCES calisanlar(id),
 
     FOREIGN KEY (ilan_durumu_id)
-        REFERENCES ilan_durumlari(id)
+        REFERENCES ilan_durumlari(id),
+        
+    FOREIGN KEY (ilan_tipi_id)
+        REFERENCES ilan_tipleri(id)
 );

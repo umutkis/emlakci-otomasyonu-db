@@ -5,8 +5,8 @@ CREATE TABLE satilik_ilanlar (
     krediye_uygun_mu BIT NOT NULL,
 
     FOREIGN KEY (ilan_id)
-        REFERENCES ilanlar(id),
+        REFERENCES ilanlar(id) ON DELETE CASCADE,
 
     FOREIGN KEY (tapu_durumu_id)
-        REFERENCES tapu_durumlari(id)
+        REFERENCES tapu_durumlari(id) 
 );
