@@ -1,55 +1,142 @@
 CREATE PROCEDURE sp_ArayuzdenIlanKaydet
-    -- 1. Ortak Alanlar (Arayüzdeki her ilanda olan inputlar)
-    @Baslik VARCHAR(255),
-    @Fiyat DECIMAL(18,2),
+    @Baslik NVARCHAR(100),
+    @Fiyat INT,
+    @EmlakTipiId INT,
+    @OdaTipiId INT,
+    @IsitmaTipiId INT,
+    @MusteriId INT,
+    @CalisanId INT,
+    @IlanTipiId INT,
+    @Il NVARCHAR(50),
+    @Ilce NVARCHAR(50),
     @YapimYili INT,
-    @IlanTipiId INT, -- 1: Kiralık, 2: Satılık
-
-    -- 2. Özel Alanlar (Arayüzde tipe göre dinamik açılan inputlar)
-    @EsyaliMi BIT = 0,
-    @AidatTutari DECIMAL(10,2) = 0,
-    @DepozitoTutari DECIMAL(10,2) = 0,
-    @KrediUygunMu BIT = 1,
-    @TapuHarciTutari DECIMAL(10,2) = 0
+    @Metrekare INT,
+    @IlanDurumuId INT = NULL,
+    @Mahalle NVARCHAR(100) = NULL,
+    @Adres NVARCHAR(255) = NULL,
+    @BulunduguKat INT = NULL,
+    @ToplamKat INT = NULL,
+    @BalkonSayisi INT = NULL,
+    @WcSayisi INT = NULL,
+    @EsyaliMi BIT = NULL,
+    @AidatTutari INT = NULL,
+    @DepozitoTutari INT = NULL,
+    @TapuDurumuId INT = NULL,
+    @KrediyeUygunMu BIT = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
+    SET XACT_ABORT ON;
 
-    -- ADIM A: Önce ortak verileri ana 'ilanlar' tablosuna yazıyoruz
-    INSERT INTO ilanlar (baslik, fiyat, yapim_yili, ilan_tipi_id)
-    VALUES (@Baslik, @Fiyat, @YapimYili, @IlanTipiId);
+    DECLARE @IlanTipiAdi NVARCHAR(50);
+    DECLARE @YeniIlanId INT;
 
-    -- ADIM B: SQL'in bu ilan için ürettiği otomatik ID'yi hafızaya alıyoruz
-    DECLARE @YeniIlanId INT = SCOPE_IDENTITY();
+    SELECT @IlanTipiAdi = tip_adi
+    FROM ilan_tipleri
+    WHERE id = @IlanTipiId;
 
-    -- ADIM C: Arayüzden gelen Tipe göre dağıtım yapıyoruz
-    -- Eğer İlan Tipi 1 (Kiralık) ise:
-    IF @IlanTipiId = 1
+    IF @IlanTipiAdi IS NULL
     BEGIN
-        INSERT INTO kiralik_ilanlar (ilan_id, esyali_mi, aidat_tutari, depozito_tutari)
-        VALUES (@YeniIlanId, @EsyaliMi, @AidatTutari, @DepozitoTutari);
-    END
-    
-    -- Eğer İlan Tipi 2 (Satılık) ise:
-    ELSE IF @IlanTipiId = 2
+        THROW 50001, 'Gecersiz ilan_tipi_id.', 1;
+    END;
+
+    IF @IlanDurumuId IS NULL
     BEGIN
-        INSERT INTO satilik_ilanlar (ilan_id, kredi_uygun_mu, tapu_harci_tutari)
-        VALUES (@YeniIlanId, @KrediUygunMu, @TapuHarciTutari);
+        SELECT @IlanDurumuId = id
+        FROM ilan_durumlari
+        WHERE durum_adi = N'Aktif';
+    END;
+
+    IF @IlanDurumuId IS NULL
+    BEGIN
+        THROW 50002, 'Aktif ilan durumu bulunamadi.', 1;
+    END;
+
+    IF @IlanTipiAdi = N'Satılık' AND @TapuDurumuId IS NULL
+    BEGIN
+        THROW 50003, 'Satilik ilan icin tapu_durumu_id zorunludur.', 1;
+    END;
+
+    BEGIN TRANSACTION;
+
+    INSERT INTO ilanlar (
+        baslik,
+        fiyat,
+        emlak_tipi_id,
+        oda_tipi_id,
+        isitma_tipi_id,
+        musteri_id,
+        calisan_id,
+        ilan_tipi_id,
+        il,
+        ilce,
+        mahalle,
+        adres,
+        yapim_yili,
+        metrekare,
+        bulundugu_kat,
+        toplam_kat,
+        balkon_sayisi,
+        wc_sayisi,
+        ilan_durumu_id
+    )
+    VALUES (
+        @Baslik,
+        @Fiyat,
+        @EmlakTipiId,
+        @OdaTipiId,
+        @IsitmaTipiId,
+        @MusteriId,
+        @CalisanId,
+        @IlanTipiId,
+        @Il,
+        @Ilce,
+        @Mahalle,
+        @Adres,
+        @YapimYili,
+        @Metrekare,
+        @BulunduguKat,
+        @ToplamKat,
+        @BalkonSayisi,
+        @WcSayisi,
+        @IlanDurumuId
+    );
+
+    SET @YeniIlanId = CONVERT(INT, SCOPE_IDENTITY());
+
+    IF @IlanTipiAdi = N'Kiralık'
+    BEGIN
+        INSERT INTO kiralik_ilanlar (
+            ilan_id,
+            esyali_mi,
+            aidat_tutari,
+            depozito_tutari
+        )
+        VALUES (
+            @YeniIlanId,
+            ISNULL(@EsyaliMi, 0),
+            @AidatTutari,
+            @DepozitoTutari
+        );
     END
+    ELSE IF @IlanTipiAdi = N'Satılık'
+    BEGIN
+        INSERT INTO satilik_ilanlar (
+            ilan_id,
+            tapu_durumu_id,
+            krediye_uygun_mu
+        )
+        VALUES (
+            @YeniIlanId,
+            @TapuDurumuId,
+            ISNULL(@KrediyeUygunMu, 0)
+        );
+    END
+    ELSE
+    BEGIN
+        THROW 50004, 'Ilan tipi Kiralik veya Satilik olmali.', 1;
+    END;
+
+    COMMIT TRANSACTION;
 END;
 GO
-
-
- -- Bu proesedürü yapmamın sebebi, ilanlar tablosunda oluşturulan ilanda, kiralık tablosundaki olan sütunların olmamasından kaynaklı bir problem oluşmuştu.
- -- İlanlarda ben ilanı eklesem de kiralık ve satılık tablosundaki veriler boş kalıyordu. Bu yüzden ben arayüzde (İlan Oluştur) butonuna tıklandığında,
- -- İlan tipini Kiralık veya Satılık olarak seçtiğimizde, o tipe göre açılan inputlara göre verilerin eklenmesi gerekiyordu
- -- (Mesela kiralıksa input olarak  Eşyalı Mı? ve Aidat Tutarı input girdisi açılacak).
- -- Bu prosedür sayesinde eğer ilan tipi Kiralıksa  kiralık tablosundaki sütunlara, Satılıksa da satılık tabosunun sütunları na göre veri eklenmiş oldu.
-
- -- Kullanım: EXEC sp_ArayuzdenIlanKaydet 'Güzel Daire', 150000, 2020, 1, 1, 500, 1000, NULL, NULL
- -- Bu örnekte,  ilan_tipi_id: 1 olduğundan  bu kod çalışacak:
- --     IF @IlanTipiId = 1
- --   BEGIN
- --       INSERT INTO kiralik_ilanlar (ilan_id, esyali_mi, aidat_tutari, depozito_tutari)
- --       VALUES (@YeniIlanId, @EsyaliMi, @AidatTutari, @DepozitoTutari);
- --   END

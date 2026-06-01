@@ -7,7 +7,7 @@ CREATE TABLE musteriler (
     soyad NVARCHAR(50) NOT NULL
         CHECK (soyad NOT LIKE '%[0-9]%'),
 
-    tc_kimlik_no VARCHAR(11) UNIQUE
+    tc_kimlik_no VARCHAR(11)
         CHECK (
             tc_kimlik_no IS NULL
             OR (

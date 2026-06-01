@@ -1,0 +1,15 @@
+CREATE TRIGGER trg_SATISLAR_GUNCELLEME_TARIHI
+ON satislar
+AFTER UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF (TRIGGER_NESTLEVEL(OBJECT_ID('trg_SATISLAR_GUNCELLEME_TARIHI'), 'AFTER', 'DML') > 1) RETURN;
+
+    UPDATE s
+    SET s.guncellenme_tarihi = GETDATE()
+    FROM satislar s
+    INNER JOIN inserted ins ON s.id = ins.id;
+END;
+GO
