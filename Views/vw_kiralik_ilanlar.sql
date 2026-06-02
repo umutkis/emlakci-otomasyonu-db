@@ -12,7 +12,7 @@ SELECT
     ilanlar.yapim_yili AS [Yapım Yılı],
 
     ilanlar.metrekare AS [Metrekare],
-    ilanlar.bina_yasi AS [Bina Yaşı],
+    YEAR(GETDATE()) - ilanlar.yapim_yili AS [Bina Yaşı],
     ilanlar.bulundugu_kat AS [Bulunduğu Kat],
     ilanlar.toplam_kat AS [Toplam Kat],
     ilanlar.balkon_sayisi AS [Balkon Sayısı],
@@ -61,3 +61,4 @@ INNER JOIN calisanlar
     ON ilanlar.calisan_id = calisanlar.id
 INNER JOIN personel_tipleri
     ON calisanlar.personel_tipi_id = personel_tipleri.id;
+GO

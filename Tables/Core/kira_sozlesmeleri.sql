@@ -23,6 +23,8 @@ CREATE TABLE kira_sozlesmeleri (
     olusturulma_tarihi DATETIME NOT NULL DEFAULT GETDATE(),
     guncellenme_tarihi DATETIME,
 
+    UNIQUE (ilan_id),
+
     CHECK (kiraci_id <> kiraya_veren_id),
 
     FOREIGN KEY (ilan_id)

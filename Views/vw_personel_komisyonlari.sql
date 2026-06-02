@@ -25,3 +25,4 @@ SELECT
 FROM komisyonlar
 INNER JOIN calisanlar
     ON komisyonlar.personel_id = calisanlar.id;
+GO

@@ -28,3 +28,4 @@ GROUP BY
     calisanlar.id,
     calisanlar.ad,
     calisanlar.soyad;
+GO
