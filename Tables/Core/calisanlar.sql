@@ -18,7 +18,7 @@ CREATE TABLE calisanlar (
     ise_baslama_tarihi DATE NOT NULL,
 
     olusturulma_tarihi DATETIME NOT NULL DEFAULT GETDATE(),
-    guncellenme_tarihi DATETIME,
+    guncellenme_tarihi DATETIME NOT NULL DEFAULT GETDATE(),
 
     FOREIGN KEY (personel_tipi_id)
         REFERENCES personel_tipleri(id)

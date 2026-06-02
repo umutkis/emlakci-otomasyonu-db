@@ -15,7 +15,7 @@ CREATE TABLE satislar (
         CHECK (kazanc_tutari >= 0),
 
     olusturulma_tarihi DATETIME NOT NULL DEFAULT GETDATE(),
-    guncellenme_tarihi DATETIME,
+    guncellenme_tarihi DATETIME NOT NULL DEFAULT GETDATE(),
 
     UNIQUE (ilan_id),
 

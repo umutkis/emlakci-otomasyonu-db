@@ -9,7 +9,7 @@ CREATE TABLE komisyonlar (
         CHECK (komisyon_tutari > 0),
 
     olusturulma_tarihi DATETIME NOT NULL DEFAULT GETDATE(),
-    guncellenme_tarihi DATETIME,
+    guncellenme_tarihi DATETIME NOT NULL DEFAULT GETDATE(),
 
     CHECK (
         (kira_sozlesmesi_id IS NOT NULL AND satis_id IS NULL)

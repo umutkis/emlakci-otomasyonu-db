@@ -37,7 +37,7 @@ CREATE TABLE ilanlar (
     ilan_durumu_id INT NOT NULL,
 
     olusturulma_tarihi DATETIME NOT NULL DEFAULT GETDATE(),
-    guncellenme_tarihi DATETIME,
+    guncellenme_tarihi DATETIME NOT NULL DEFAULT GETDATE(),
 
     CHECK (
         bulundugu_kat IS NULL
