@@ -10,7 +10,7 @@ const toastEl = document.getElementById('toast');
 
 function showToast(message) {
   toastEl.textContent = message;
-  toastEl.classList.add('show');
+  toastEl.classList.add('show');a
   window.setTimeout(() => toastEl.classList.remove('show'), 3200);
 }
 
@@ -184,7 +184,7 @@ function setupForms() {
     const data = formData(form);
     data.tip_ids = [...form.querySelectorAll('input[name="tip_ids"]:checked')].map((input) => input.value);
 
-    await api('/api/musteriler', {
+    await api('/api/musteri-ekle', {
       method: 'POST',
       body: JSON.stringify(data)
     });
@@ -197,7 +197,7 @@ function setupForms() {
     event.preventDefault();
     const form = event.currentTarget;
 
-    await api('/api/calisanlar', {
+    await api('/api/calisan-ekle', {
       method: 'POST',
       body: JSON.stringify(formData(form))
     });
@@ -210,7 +210,7 @@ function setupForms() {
     event.preventDefault();
     const form = event.currentTarget;
 
-    await api('/api/ilanlar', {
+    await api('/api/ilan-ekle', {
       method: 'POST',
       body: JSON.stringify(formData(form))
     });

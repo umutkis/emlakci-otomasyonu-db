@@ -4,7 +4,7 @@ const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const sql = require('mssql');
-
+const { writeLog } = require('./logger');
 const app = express();
 const port = Number(process.env.PORT || 3000);
 
@@ -29,8 +29,23 @@ function getPool() {
   return poolPromise;
 }
 
-function handleError(res, error) {
-  console.error(error);
+// Gelişmiş Merkezi Hata Yakalayıcı (req destekli ve dinamik UserID yapılı)
+async function handleError(req, res, error, actionContext = 'SISTEM_HATASI') {
+  console.error(`\n!!! [${actionContext}] Bir Hata Yakalandı:`, error.message);
+  
+  try {
+    const pool = await getPool();
+    
+    // İstekten dinamik kullanıcı ID'sini çekiyoruz, yoksa varsayılan 1 (Admin) basıyoruz
+    const aktifKullaniciId = req.user?.id || req.session?.userId || 1;
+    const logDetay = `Rota: ${req.originalUrl} | Hata: ${error.message}`;
+    
+    // SQL NOT NULL kuralına takılmadan logu kaydediyoruz
+    await writeLog(pool, aktifKullaniciId, actionContext, logDetay);
+  } catch (logErr) {
+    console.error("Hatayı SQL'e yazarken logger da patladı:", logErr.message);
+  }
+  
   res.status(500).json({
     message: 'Islem tamamlanamadi.',
     detail: error.message
@@ -47,7 +62,7 @@ app.get('/api/health', async (req, res) => {
     const result = await pool.request().query('SELECT 1 AS ok');
     res.json({ ok: result.recordset[0].ok === 1 });
   } catch (error) {
-    handleError(res, error);
+    await handleError(req, res, error, 'HEALTH_CHECK_HATA');
   }
 });
 
@@ -74,7 +89,7 @@ app.get('/api/references', async (req, res) => {
 
     res.json(grouped);
   } catch (error) {
-    handleError(res, error);
+    await handleError(req, res, error, 'REFERENCES_HATA');
   }
 });
 
@@ -97,12 +112,13 @@ app.get('/api/musteriler', async (req, res) => {
     `);
     res.json(result.recordset);
   } catch (error) {
-    handleError(res, error);
+    await handleError(req, res, error, 'MUSTERI_LISTELE_HATA');
   }
 });
 
-app.post('/api/musteriler', async (req, res) => {
+app.post('/api/musteri-ekle', async (req, res) => {
   const { ad, soyad, tc_kimlik_no, telefon, tip_ids = [] } = req.body;
+  const mevcutKullaniciId = req.user?.id || req.session?.userId || 1;
 
   try {
     const pool = await getPool();
@@ -134,13 +150,17 @@ app.post('/api/musteriler', async (req, res) => {
       }
 
       await transaction.commit();
+      
+      // Başarılı işlem logu
+      await writeLog(pool, mevcutKullaniciId, 'MUSTERI_EKLE', `Yeni müşteri eklendi: ${ad} ${soyad} (ID: ${musteriId})`);
+
       res.status(201).json({ id: musteriId });
     } catch (error) {
       await transaction.rollback();
       throw error;
     }
   } catch (error) {
-    handleError(res, error);
+    await handleError(req, res, error, 'MUSTERI_EKLE_HATA');
   }
 });
 
@@ -155,13 +175,14 @@ app.get('/api/calisanlar', async (req, res) => {
     `);
     res.json(result.recordset);
   } catch (error) {
-    handleError(res, error);
+    await handleError(req, res, error, 'CALISAN_LISTELE_HATA');
   }
 });
 
-app.post('/api/calisanlar', async (req, res) => {
+app.post('/api/calisan-ekle', async (req, res) => {
   const { ad, soyad, telefon, personel_tipi_id, ise_baslama_tarihi } = req.body;
-
+  const mevcutKullaniciId = req.user?.id || req.session?.userId || 1;
+  
   try {
     const pool = await getPool();
     const result = await pool.request()
@@ -175,10 +196,13 @@ app.post('/api/calisanlar', async (req, res) => {
         OUTPUT inserted.id
         VALUES (@ad, @soyad, @telefon, @personel_tipi_id, @ise_baslama_tarihi);
       `);
+    const calisan_id = result.recordset[0].id;
 
-    res.status(201).json({ id: result.recordset[0].id });
+    await writeLog(pool, mevcutKullaniciId, 'ÇALISAN_EKLE', `Yeni çalışan eklendi: ${ad} ${soyad} (ID: ${calisan_id})`);
+
+    res.status(201).json({ id: calisan_id });
   } catch (error) {
-    handleError(res, error);
+    await handleError(req, res, error, 'CALISAN_EKLE_HATA');
   }
 });
 
@@ -206,12 +230,13 @@ app.get('/api/ilanlar', async (req, res) => {
     `);
     res.json(result.recordset);
   } catch (error) {
-    handleError(res, error);
+    await handleError(req, res, error, 'ILAN_LISTELE_HATA');
   }
 });
 
-app.post('/api/ilanlar', async (req, res) => {
+app.post('/api/ilan-ekle', async (req, res) => {
   const body = req.body;
+  const mevcutKullaniciId = req.user?.id || req.session?.userId || 1;
 
   try {
     const pool = await getPool();
@@ -241,9 +266,13 @@ app.post('/api/ilanlar', async (req, res) => {
       .input('KrediyeUygunMu', sql.Bit, Boolean(body.krediye_uygun_mu));
 
     await request.execute('sp_ArayuzdenIlanKaydet');
+    
+    // İlan ekleme başarılı logu
+    await writeLog(pool, mevcutKullaniciId, 'ILAN_EKLE', `Yeni ilan eklendi: ${body.baslik}`);
+    
     res.status(201).json({ ok: true });
   } catch (error) {
-    handleError(res, error);
+    await handleError(req, res, error, 'ILAN_EKLE_HATA');
   }
 });
 
@@ -253,7 +282,7 @@ app.get('/api/komisyon-ozeti', async (req, res) => {
     const result = await pool.request().query('SELECT * FROM vw_personel_komisyon_ozeti;');
     res.json(result.recordset);
   } catch (error) {
-    handleError(res, error);
+    await handleError(req, res, error, 'KOMISYON_OZETI_HATA');
   }
 });
 
@@ -261,6 +290,14 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.listen(port, () => {
-  console.log(`Emlakci otomasyonu arayuzu: http://localhost:${port}`);
-});
+// Sunucu Başlatma Bloğu
+try {
+  app.listen(port, () => {
+    console.log(`\n==================================================`);
+    console.log(`👉 Linke tıkla: http://localhost:${port}`);
+    console.log(`==================================================\n`);
+  });
+} catch (globalError) {
+  console.log(`\n\x1b[31m[KRİTİK HATA] Sunucu ayağa kalkarken patladı:\x1b[0m`);
+  console.error(globalError);
+}
