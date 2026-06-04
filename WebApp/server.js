@@ -29,8 +29,29 @@ function getPool() {
   return poolPromise;
 }
 
+// Consecutive error tracking variables for the backend
+let lastBackendErrorKey = null;
+let consecutiveBackendErrorCount = 0;
+
 // Gelişmiş Merkezi Hata Yakalayıcı (req destekli ve dinamik UserID yapılı)
 async function handleError(req, res, error, actionContext = 'SISTEM_HATASI') {
+  const errorMsg = error.message || 'İşlem tamamlanamadı.';
+  const currentErrorKey = `${actionContext}:${errorMsg}`;
+
+  if (currentErrorKey === lastBackendErrorKey) {
+    consecutiveBackendErrorCount++;
+    if (consecutiveBackendErrorCount > 5) {
+      console.log(`[BACKEND DUPLICATE ERROR SUPPRESSED]: Context=${actionContext}, Error="${errorMsg}" has been triggered consecutively ${consecutiveBackendErrorCount} times. Blocking logging & DB write.`);
+      return res.status(400).json({
+        success: false,
+        message: errorMsg
+      });
+    }
+  } else {
+    lastBackendErrorKey = currentErrorKey;
+    consecutiveBackendErrorCount = 1;
+  }
+
   console.error(`\n!!! [${actionContext}] Bir Hata Yakalandı:`, error.message);
   
   try {
@@ -46,15 +67,28 @@ async function handleError(req, res, error, actionContext = 'SISTEM_HATASI') {
     console.error("Hatayı SQL'e yazarken logger da patladı:", logErr.message);
   }
   
-  res.status(500).json({
-    message: 'Islem tamamlanamadi.',
-    detail: error.message
+  res.status(400).json({
+    success: false,
+    message: errorMsg
   });
 }
 
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Middleware to reset consecutive backend error counters on successful requests
+app.use((req, res, next) => {
+  const originalJson = res.json;
+  res.json = function (body) {
+    if (res.statusCode >= 200 && res.statusCode < 300) {
+      lastBackendErrorKey = null;
+      consecutiveBackendErrorCount = 0;
+    }
+    return originalJson.apply(this, arguments);
+  };
+  next();
+});
 
 app.get('/api/health', async (req, res) => {
   try {
@@ -122,6 +156,24 @@ app.post('/api/musteri-ekle', async (req, res) => {
 
   try {
     const pool = await getPool();
+    
+    // Duplicate Check
+    const dupCheck = await pool.request()
+      .input('telefon', sql.VarChar(11), telefon)
+      .query('SELECT TOP 1 id FROM musteriler WHERE telefon = @telefon');
+    if (dupCheck.recordset.length > 0) {
+      throw new Error('Record already exists. (Bu telefon numarasıyla kayıtlı müşteri zaten var.)');
+    }
+    
+    if (tc_kimlik_no) {
+      const tcCheck = await pool.request()
+        .input('tc', sql.VarChar(11), tc_kimlik_no)
+        .query('SELECT TOP 1 id FROM musteriler WHERE tc_kimlik_no = @tc');
+      if (tcCheck.recordset.length > 0) {
+        throw new Error('Record already exists. (Bu T.C. kimlik numarasıyla kayıtlı müşteri zaten var.)');
+      }
+    }
+
     const transaction = new sql.Transaction(pool);
     await transaction.begin();
 
@@ -154,7 +206,11 @@ app.post('/api/musteri-ekle', async (req, res) => {
       // Başarılı işlem logu
       await writeLog(pool, mevcutKullaniciId, 'MUSTERI_EKLE', `Yeni müşteri eklendi: ${ad} ${soyad} (ID: ${musteriId})`);
 
-      res.status(201).json({ id: musteriId });
+      res.status(201).json({
+        success: true,
+        message: 'Müşteri başarıyla eklendi.',
+        id: musteriId
+      });
     } catch (error) {
       await transaction.rollback();
       throw error;
@@ -185,6 +241,15 @@ app.post('/api/calisan-ekle', async (req, res) => {
   
   try {
     const pool = await getPool();
+    
+    // Duplicate Check
+    const dupCheck = await pool.request()
+      .input('telefon', sql.VarChar(11), telefon)
+      .query('SELECT TOP 1 id FROM calisanlar WHERE telefon = @telefon');
+    if (dupCheck.recordset.length > 0) {
+      throw new Error('Record already exists. (Bu telefon numarasıyla kayıtlı çalışan zaten var.)');
+    }
+
     const result = await pool.request()
       .input('ad', sql.NVarChar(50), ad)
       .input('soyad', sql.NVarChar(50), soyad)
@@ -200,7 +265,11 @@ app.post('/api/calisan-ekle', async (req, res) => {
 
     await writeLog(pool, mevcutKullaniciId, 'ÇALISAN_EKLE', `Yeni çalışan eklendi: ${ad} ${soyad} (ID: ${calisan_id})`);
 
-    res.status(201).json({ id: calisan_id });
+    res.status(201).json({
+      success: true,
+      message: 'Çalışan başarıyla eklendi.',
+      id: calisan_id
+    });
   } catch (error) {
     await handleError(req, res, error, 'CALISAN_EKLE_HATA');
   }
@@ -240,6 +309,15 @@ app.post('/api/ilan-ekle', async (req, res) => {
 
   try {
     const pool = await getPool();
+    
+    // Duplicate Check
+    const dupCheck = await pool.request()
+      .input('baslik', sql.NVarChar(100), body.baslik)
+      .query('SELECT TOP 1 id FROM ilanlar WHERE baslik = @baslik');
+    if (dupCheck.recordset.length > 0) {
+      throw new Error('Record already exists. (Bu başlıkla kayıtlı ilan zaten var.)');
+    }
+
     const request = pool.request()
       .input('Baslik', sql.NVarChar(100), body.baslik)
       .input('Fiyat', sql.Int, Number(body.fiyat))
@@ -270,7 +348,10 @@ app.post('/api/ilan-ekle', async (req, res) => {
     // İlan ekleme başarılı logu
     await writeLog(pool, mevcutKullaniciId, 'ILAN_EKLE', `Yeni ilan eklendi: ${body.baslik}`);
     
-    res.status(201).json({ ok: true });
+    res.status(201).json({
+      success: true,
+      message: 'İlan başarıyla eklendi.'
+    });
   } catch (error) {
     await handleError(req, res, error, 'ILAN_EKLE_HATA');
   }

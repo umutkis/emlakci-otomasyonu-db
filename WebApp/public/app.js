@@ -8,15 +8,75 @@ const state = {
 };
 
 const statusEl = document.getElementById('connectionStatus');
-const toastEl = document.getElementById('toast');
 
 let saleTableManager;
 let rentalTableManager;
 
-function showToast(message) {
-  toastEl.textContent = message;
-  toastEl.classList.add('show');
-  window.setTimeout(() => toastEl.classList.remove('show'), 3200);
+// Toast Container Creator
+let toastContainer = document.getElementById('toastContainer');
+if (!toastContainer) {
+  toastContainer = document.createElement('div');
+  toastContainer.id = 'toastContainer';
+  toastContainer.className = 'toastContainer';
+  document.body.appendChild(toastContainer);
+}
+
+// Consecutive error tracking state
+let lastErrorMsg = '';
+let consecutiveErrorCount = 0;
+
+function showNotification(message, type = 'info') {
+  if (type === 'error') {
+    if (message === lastErrorMsg) {
+      consecutiveErrorCount++;
+      if (consecutiveErrorCount > 5) {
+        console.warn(`[DUPLICATE ERROR SUPPRESSED]: "${message}" has been triggered consecutively ${consecutiveErrorCount} times. Suppressing display.`);
+        return;
+      }
+    } else {
+      lastErrorMsg = message;
+      consecutiveErrorCount = 1;
+    }
+  } else if (type === 'success') {
+    // Reset consecutive tracking on successful actions
+    lastErrorMsg = '';
+    consecutiveErrorCount = 0;
+  }
+
+  const toast = document.createElement('div');
+  toast.className = `toastItem ${type}`;
+  
+  let icon = 'ℹ️';
+  if (type === 'success') icon = '✅';
+  else if (type === 'error') icon = '❌';
+  else if (type === 'warning') icon = '⚠️';
+  
+  toast.innerHTML = `
+    <span class="toastIcon">${icon}</span>
+    <span class="toastMsg">${message}</span>
+    <button class="toastCloseBtn">&times;</button>
+  `;
+  
+  toastContainer.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.classList.add('show');
+  }, 10);
+  
+  const close = () => {
+    toast.classList.remove('show');
+    toast.classList.add('fade-out');
+    setTimeout(() => {
+      toast.remove();
+    }, 250);
+  };
+  
+  toast.querySelector('.toastCloseBtn').addEventListener('click', close);
+  setTimeout(close, 4000);
+}
+
+function showToast(message, type = 'info') {
+  showNotification(message, type);
 }
 
 async function api(path, options = {}) {
@@ -404,7 +464,7 @@ async function checkConnection() {
   } catch (error) {
     statusEl.textContent = 'SQL Server bağlantı hatası';
     statusEl.className = 'status fail';
-    showToast(error.message);
+    showNotification('Database connection failed. (SQL Server bağlantı hatası)', 'error');
   }
 }
 
@@ -526,40 +586,52 @@ function setupForms() {
     const data = formData(form);
     data.tip_ids = [...form.querySelectorAll('input[name="tip_ids"]:checked')].map((input) => input.value);
 
-    await api('/api/musteri-ekle', {
-      method: 'POST',
-      body: JSON.stringify(data)
-    });
-    form.reset();
-    await loadMusteriler();
-    showToast('Müşteri eklendi.');
+    try {
+      const response = await api('/api/musteri-ekle', {
+        method: 'POST',
+        body: JSON.stringify(data)
+      });
+      form.reset();
+      await loadMusteriler();
+      showNotification(response.message || 'Customer created successfully. (Müşteri başarıyla eklendi.)', 'success');
+    } catch (err) {
+      showNotification(err.message || 'Operation failed. (Müşteri eklenemedi.)', 'error');
+    }
   });
 
   document.getElementById('calisanForm').addEventListener('submit', async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
 
-    await api('/api/calisan-ekle', {
-      method: 'POST',
-      body: JSON.stringify(formData(form))
-    });
-    form.reset();
-    await loadCalisanlar();
-    showToast('Çalışan eklendi.');
+    try {
+      const response = await api('/api/calisan-ekle', {
+        method: 'POST',
+        body: JSON.stringify(formData(form))
+      });
+      form.reset();
+      await loadCalisanlar();
+      showNotification(response.message || 'Çalışan başarıyla eklendi.', 'success');
+    } catch (err) {
+      showNotification(err.message || 'Operation failed. (Çalışan eklenemedi.)', 'error');
+    }
   });
 
   document.getElementById('ilanForm').addEventListener('submit', async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
 
-    await api('/api/ilan-ekle', {
-      method: 'POST',
-      body: JSON.stringify(formData(form))
-    });
-    form.reset();
-    updateIlanTypeFields();
-    await loadIlanlar();
-    showToast('İlan eklendi.');
+    try {
+      const response = await api('/api/ilan-ekle', {
+        method: 'POST',
+        body: JSON.stringify(formData(form))
+      });
+      form.reset();
+      updateIlanTypeFields();
+      await loadIlanlar();
+      showNotification(response.message || 'İlan başarıyla eklendi.', 'success');
+    } catch (err) {
+      showNotification(err.message || 'Operation failed. (İlan eklenemedi.)', 'error');
+    }
   });
 }
 
