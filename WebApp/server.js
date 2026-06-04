@@ -276,6 +276,26 @@ app.post('/api/ilan-ekle', async (req, res) => {
   }
 });
 
+app.get('/api/sale-properties', async (req, res) => {
+  try {
+    const pool = await getPool();
+    const result = await pool.request().query('SELECT * FROM vw_satilik_ilanlar ORDER BY [İlan No] DESC;');
+    res.json(result.recordset || []);
+  } catch (error) {
+    await handleError(req, res, error, 'SALE_PROPERTIES_HATA');
+  }
+});
+
+app.get('/api/rental-properties', async (req, res) => {
+  try {
+    const pool = await getPool();
+    const result = await pool.request().query('SELECT * FROM vw_kiralik_ilanlar ORDER BY [İlan No] DESC;');
+    res.json(result.recordset || []);
+  } catch (error) {
+    await handleError(req, res, error, 'RENTAL_PROPERTIES_HATA');
+  }
+});
+
 app.get('/api/komisyon-ozeti', async (req, res) => {
   try {
     const pool = await getPool();

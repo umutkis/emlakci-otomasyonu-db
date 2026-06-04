@@ -2,15 +2,20 @@ const state = {
   refs: {},
   musteriler: [],
   calisanlar: [],
-  ilanlar: []
+  ilanlar: [],
+  saleProperties: [],
+  rentalProperties: []
 };
 
 const statusEl = document.getElementById('connectionStatus');
 const toastEl = document.getElementById('toast');
 
+let saleTableManager;
+let rentalTableManager;
+
 function showToast(message) {
   toastEl.textContent = message;
-  toastEl.classList.add('show');a
+  toastEl.classList.add('show');
   window.setTimeout(() => toastEl.classList.remove('show'), 3200);
 }
 
@@ -49,7 +54,12 @@ function table(containerId, rows, columns) {
 
   const head = columns.map((column) => `<th>${column.title}</th>`).join('');
   const body = rows.map((row) => {
-    const cells = columns.map((column) => `<td>${row[column.key] ?? ''}</td>`).join('');
+    const cells = columns.map((column) => {
+      if (column.render) {
+        return `<td>${column.render(row)}</td>`;
+      }
+      return `<td>${row[column.key] ?? ''}</td>`;
+    }).join('');
     return `<tr>${cells}</tr>`;
   }).join('');
 
@@ -62,6 +72,328 @@ function formData(form) {
     data[checkbox.name] = checkbox.checked;
   }
   return data;
+}
+
+function formatCurrency(val) {
+  if (val === null || val === undefined) return '-';
+  return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(val);
+}
+
+// Reusable Table Manager for Properties for Sale / Rent
+class ListingTableManager {
+  constructor(config) {
+    this.containerId = config.containerId;
+    this.apiUrl = config.apiUrl;
+    this.columns = config.columns;
+    this.type = config.type; // 'sale' or 'rental'
+    this.searchId = config.searchId;
+    this.refreshId = config.refreshId;
+    this.countId = config.countId;
+    this.stateKey = config.stateKey;
+    
+    this.rawData = [];
+    this.filteredData = [];
+    this.sortKey = null;
+    this.sortDir = 'asc';
+    this.searchQuery = '';
+    
+    this.init();
+  }
+  
+  init() {
+    const refreshBtn = document.getElementById(this.refreshId);
+    if (refreshBtn) {
+      refreshBtn.addEventListener('click', () => this.load());
+    }
+    
+    const searchInput = document.getElementById(this.searchId);
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        this.searchQuery = e.target.value.toLowerCase().trim();
+        this.filterAndRender();
+      });
+    }
+  }
+  
+  async load() {
+    this.renderLoading();
+    try {
+      const data = await api(this.apiUrl);
+      this.rawData = data || [];
+      state[this.stateKey] = this.rawData;
+      this.filterAndRender();
+    } catch (err) {
+      this.renderError(err.message);
+    }
+  }
+  
+  filterAndRender() {
+    if (this.searchQuery) {
+      this.filteredData = this.rawData.filter(row => {
+        return this.columns.some(col => {
+          const val = row[col.key];
+          if (val === null || val === undefined) return false;
+          return String(val).toLowerCase().includes(this.searchQuery);
+        });
+      });
+    } else {
+      this.filteredData = [...this.rawData];
+    }
+    
+    if (this.sortKey) {
+      this.filteredData.sort((a, b) => {
+        let valA = a[this.sortKey] ?? '';
+        let valB = b[this.sortKey] ?? '';
+        
+        if (typeof valA === 'number' && typeof valB === 'number') {
+          return this.sortDir === 'asc' ? valA - valB : valB - valA;
+        }
+        
+        valA = String(valA);
+        valB = String(valB);
+        return this.sortDir === 'asc' 
+          ? valA.localeCompare(valB, 'tr') 
+          : valB.localeCompare(valA, 'tr');
+      });
+    }
+    
+    const countEl = document.getElementById(this.countId);
+    if (countEl) {
+      countEl.textContent = this.filteredData.length;
+    }
+    
+    this.render();
+  }
+  
+  renderLoading() {
+    const container = document.getElementById(this.containerId);
+    container.innerHTML = `
+      <div class="loadingState">
+        <div class="spinner"></div>
+        <span>SQL Server bağlantısından veriler alınıyor...</span>
+      </div>
+    `;
+  }
+  
+  renderError(msg) {
+    const container = document.getElementById(this.containerId);
+    container.innerHTML = `
+      <div class="emptyState" style="border-color: #fecdd3; background-color: #fff1f2;">
+        <p style="color: #b91c1c;">Hata: ${msg}</p>
+      </div>
+    `;
+  }
+  
+  render() {
+    const container = document.getElementById(this.containerId);
+    if (!this.filteredData.length) {
+      container.innerHTML = `
+        <div class="emptyState">
+          <p>Kayıt bulunamadı.</p>
+        </div>
+      `;
+      return;
+    }
+    
+    const head = this.columns.map(column => {
+      if (column.sortable !== false) {
+        let sortClass = 'sortable';
+        if (this.sortKey === column.key) {
+          sortClass += ` ${this.sortDir}`;
+        }
+        return `<th class="${sortClass}" data-key="${column.key}">${column.title}</th>`;
+      }
+      return `<th>${column.title}</th>`;
+    }).join('');
+    
+    const body = this.filteredData.map(row => {
+      const cells = this.columns.map(column => {
+        if (column.render) {
+          return `<td>${column.render(row, this.type, this.stateKey)}</td>`;
+        }
+        return `<td>${row[column.key] ?? ''}</td>`;
+      }).join('');
+      return `<tr>${cells}</tr>`;
+    }).join('');
+    
+    container.innerHTML = `<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+    
+    container.querySelectorAll('th.sortable').forEach(th => {
+      th.addEventListener('click', () => {
+        const key = th.dataset.key;
+        if (this.sortKey === key) {
+          this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
+        } else {
+          this.sortKey = key;
+          this.sortDir = 'asc';
+        }
+        this.filterAndRender();
+      });
+    });
+  }
+}
+
+// Columns definition for Property listings
+const propertyColumns = [
+  { key: 'İlan No', title: 'No' },
+  { key: 'Başlık', title: 'Başlık' },
+  { 
+    key: 'Fiyat', 
+    title: 'Fiyat', 
+    render: (row) => formatCurrency(row['Fiyat']) 
+  },
+  { key: 'Emlak Tipi', title: 'Emlak Tipi' },
+  { key: 'Oda Tipi', title: 'Oda Tipi' },
+  { key: 'İl', title: 'İl' },
+  { key: 'İlçe', title: 'İlçe' },
+  { key: 'İlan Durumu', title: 'Durum' },
+  {
+    key: 'detay',
+    title: 'İşlem',
+    sortable: false,
+    render: (row, type, stateKey) => `
+      <button class="detailBtn" onclick="showListingDetail('${type}', ${row['İlan No']}, '${stateKey}')">Detay</button>
+    `
+  }
+];
+
+function showListingDetail(type, id, stateKey) {
+  const list = state[stateKey] || [];
+  const item = list.find((x) => x['İlan No'] === id);
+
+  if (!item) {
+    showToast('İlan detayları bulunamadı.');
+    return;
+  }
+
+  const modalTitle = document.getElementById('modalTitle');
+  const modalDetails = document.getElementById('modalDetails');
+  const detailModal = document.getElementById('detailModal');
+
+  modalTitle.textContent = `İlan Detayı (No: ${item['İlan No']})`;
+  
+  let typeSpecificHtml = '';
+  if (type === 'rental') {
+    typeSpecificHtml = `
+      <div class="detailItem">
+        <div class="detailLabel">Eşyalı Mı</div>
+        <div class="detailValue"><span class="badge ${item['Eşyalı Mı'] === 'Evet' ? 'green' : 'red'}">${item['Eşyalı Mı']}</span></div>
+      </div>
+      <div class="detailItem">
+        <div class="detailLabel">Aidat Tutarı</div>
+        <div class="detailValue">${formatCurrency(item['Aidat Tutarı'])}</div>
+      </div>
+      <div class="detailItem">
+        <div class="detailLabel">Depozito Tutarı</div>
+        <div class="detailValue">${formatCurrency(item['Depozito Tutarı'])}</div>
+      </div>
+    `;
+  } else {
+    typeSpecificHtml = `
+      <div class="detailItem">
+        <div class="detailLabel">Tapu Durumu</div>
+        <div class="detailValue"><span class="badge blue">${item['Tapu Durumu'] || '-'}</span></div>
+      </div>
+      <div class="detailItem">
+        <div class="detailLabel">Krediye Uygun Mu</div>
+        <div class="detailValue"><span class="badge ${item['Krediye Uygun Mu'] === 'Evet' ? 'green' : 'red'}">${item['Krediye Uygun Mu']}</span></div>
+      </div>
+    `;
+  }
+
+  modalDetails.innerHTML = `
+    <div class="detailGrid">
+      <div class="detailItem fullWidth">
+        <div class="detailLabel">Başlık</div>
+        <div class="detailValue" style="font-size: 15px; font-weight: 600; color: #0f172a;">${item['Başlık']}</div>
+      </div>
+      <div class="detailItem">
+        <div class="detailLabel">Fiyat</div>
+        <div class="detailValue priceValue">${formatCurrency(item['Fiyat'])}</div>
+      </div>
+      <div class="detailItem">
+        <div class="detailLabel">İlan Durumu</div>
+        <div class="detailValue"><span class="badge green">${item['İlan Durumu'] || 'Aktif'}</span></div>
+      </div>
+      
+      <div class="detailItem">
+        <div class="detailLabel">Emlak Tipi</div>
+        <div class="detailValue">${item['Emlak Tipi'] || '-'}</div>
+      </div>
+      <div class="detailItem">
+        <div class="detailLabel">Oda Tipi</div>
+        <div class="detailValue">${item['Oda Tipi'] || '-'}</div>
+      </div>
+      <div class="detailItem">
+        <div class="detailLabel">Isıtma Tipi</div>
+        <div class="detailValue">${item['Isıtma Tipi'] || '-'}</div>
+      </div>
+      <div class="detailItem">
+        <div class="detailLabel">Metrekare</div>
+        <div class="detailValue">${item['Metrekare']} m²</div>
+      </div>
+      <div class="detailItem">
+        <div class="detailLabel">Yapım Yılı / Bina Yaşı</div>
+        <div class="detailValue">${item['Yapım Yılı']} (${item['Bina Yaşı'] ?? '-'} Yaşında)</div>
+      </div>
+      <div class="detailItem">
+        <div class="detailLabel">Bulunduğu Kat / Toplam Kat</div>
+        <div class="detailValue">${item['Bulunduğu Kat'] ?? '-'} / ${item['Toplam Kat'] ?? '-'}</div>
+      </div>
+      <div class="detailItem">
+        <div class="detailLabel">Balkon Sayısı / WC Sayısı</div>
+        <div class="detailValue">${item['Balkon Sayısı'] ?? '0'} / ${item['WC Sayısı'] ?? '-'}</div>
+      </div>
+      
+      ${typeSpecificHtml}
+
+      <div class="detailItem fullWidth">
+        <div class="detailLabel">Konum</div>
+        <div class="detailValue">
+          <strong>${item['İl']} / ${item['İlçe']}${item['Mahalle'] ? ' / ' + item['Mahalle'] : ''}</strong><br>
+          <span style="font-size: 13px; color: #4b5563;">${item['Adres'] || 'Adres bilgisi girilmemiş.'}</span>
+        </div>
+      </div>
+
+      <div class="detailItem">
+        <div class="detailLabel">İlanı Ekleyen</div>
+        <div class="detailValue">${item['İlanı Ekleyen'] || '-'}</div>
+      </div>
+      <div class="detailItem">
+        <div class="detailLabel">Ekleyen Kişinin Rolü</div>
+        <div class="detailValue">${item['Ekleyen Kişinin Rolü'] || '-'}</div>
+      </div>
+      <div class="detailItem">
+        <div class="detailLabel">Eklenme Tarihi</div>
+        <div class="detailValue">${item['Eklenme Tarihi'] || '-'}</div>
+      </div>
+      <div class="detailItem">
+        <div class="detailLabel">Son Güncelleme</div>
+        <div class="detailValue">${item['Güncellenme Tarihi'] || '-'}</div>
+      </div>
+    </div>
+  `;
+
+  detailModal.classList.add('show');
+}
+
+window.showListingDetail = showListingDetail;
+
+function setupModalClose() {
+  const detailModal = document.getElementById('detailModal');
+  const closeModalBtn = document.getElementById('closeModalBtn');
+  
+  if (closeModalBtn) {
+    closeModalBtn.addEventListener('click', () => {
+      detailModal.classList.remove('show');
+    });
+  }
+
+  window.addEventListener('click', (event) => {
+    if (event.target === detailModal) {
+      detailModal.classList.remove('show');
+    }
+  });
 }
 
 async function checkConnection() {
@@ -164,15 +496,25 @@ async function refreshAll() {
   await loadCalisanlar();
   await loadIlanlar();
   await loadKomisyonOzeti();
+  
+  if (saleTableManager) await saleTableManager.load();
+  if (rentalTableManager) await rentalTableManager.load();
 }
 
 function setupTabs() {
   document.querySelectorAll('.tab').forEach((button) => {
-    button.addEventListener('click', () => {
+    button.addEventListener('click', async () => {
       document.querySelectorAll('.tab').forEach((tab) => tab.classList.remove('active'));
       document.querySelectorAll('.page').forEach((page) => page.classList.remove('active'));
       button.classList.add('active');
-      document.getElementById(button.dataset.page).classList.add('active');
+      const targetPage = button.dataset.page;
+      document.getElementById(targetPage).classList.add('active');
+      
+      if (targetPage === 'saleProperties' && saleTableManager) {
+        await saleTableManager.load();
+      } else if (targetPage === 'rentalProperties' && rentalTableManager) {
+        await rentalTableManager.load();
+      }
     });
   });
 }
@@ -254,6 +596,29 @@ async function main() {
   setupTabs();
   setupForms();
   setupRefreshButtons();
+  setupModalClose();
+
+  saleTableManager = new ListingTableManager({
+    containerId: 'salePropertiesTable',
+    apiUrl: '/api/sale-properties',
+    columns: propertyColumns,
+    type: 'sale',
+    searchId: 'saleSearch',
+    refreshId: 'refreshSale',
+    countId: 'saleCount',
+    stateKey: 'saleProperties'
+  });
+
+  rentalTableManager = new ListingTableManager({
+    containerId: 'rentalPropertiesTable',
+    apiUrl: '/api/rental-properties',
+    columns: propertyColumns,
+    type: 'rental',
+    searchId: 'rentalSearch',
+    refreshId: 'refreshRental',
+    countId: 'rentalCount',
+    stateKey: 'rentalProperties'
+  });
 
   try {
     await refreshAll();

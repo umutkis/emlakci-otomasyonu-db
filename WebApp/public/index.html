@@ -21,6 +21,8 @@
         <button class="tab" data-page="musteriler">Müşteriler</button>
         <button class="tab" data-page="calisanlar">Çalışanlar</button>
         <button class="tab" data-page="ilanlar">İlanlar</button>
+        <button class="tab" data-page="saleProperties">Satılık İlanlar</button>
+        <button class="tab" data-page="rentalProperties">Kiralık İlanlar</button>
       </nav>
 
       <section id="dashboard" class="page active">
@@ -114,7 +116,48 @@
         </form>
         <div id="ilanlarTable" class="tableWrap"></div>
       </section>
+
+      <section id="saleProperties" class="page">
+        <div class="sectionHeader">
+          <h2>Satılık İlanlar (Properties for Sale)</h2>
+          <div class="toolbar">
+            <input type="text" id="saleSearch" placeholder="İlanlarda ara..." class="searchInput">
+            <button id="refreshSale" class="secondary">🔄 Yenile</button>
+          </div>
+        </div>
+        <div class="tableMeta">
+          <span>Toplam: <strong id="saleCount">0</strong> kayıt</span>
+        </div>
+        <div id="salePropertiesTable" class="tableWrap"></div>
+      </section>
+
+      <section id="rentalProperties" class="page">
+        <div class="sectionHeader">
+          <h2>Kiralık İlanlar (Properties for Rent)</h2>
+          <div class="toolbar">
+            <input type="text" id="rentalSearch" placeholder="İlanlarda ara..." class="searchInput">
+            <button id="refreshRental" class="secondary">🔄 Yenile</button>
+          </div>
+        </div>
+        <div class="tableMeta">
+          <span>Toplam: <strong id="rentalCount">0</strong> kayıt</span>
+        </div>
+        <div id="rentalPropertiesTable" class="tableWrap"></div>
+      </section>
     </main>
+
+    <!-- İlan Detay Modalı -->
+    <div id="detailModal" class="modal">
+      <div class="modalContent">
+        <div class="modalHeader">
+          <h2 id="modalTitle">İlan Detayı</h2>
+          <button id="closeModalBtn" class="closeBtn">&times;</button>
+        </div>
+        <div class="modalBody" id="modalDetails">
+          <!-- JS tarafından dinamik doldurulacak -->
+        </div>
+      </div>
+    </div>
 
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
     <script src="app.js"></script>
