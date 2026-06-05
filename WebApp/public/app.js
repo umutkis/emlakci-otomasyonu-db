@@ -4,13 +4,17 @@ const state = {
   calisanlar: [],
   ilanlar: [],
   saleProperties: [],
-  rentalProperties: []
+  rentalProperties: [],
+  salesHistory: [],
+  rentalContracts: []
 };
 
 const statusEl = document.getElementById('connectionStatus');
 
 let saleTableManager;
 let rentalTableManager;
+let salesHistoryTableManager;
+let rentalContractsTableManager;
 
 // Toast Container Creator
 let toastContainer = document.getElementById('toastContainer');
@@ -294,27 +298,75 @@ class ListingTableManager {
 }
 
 // Columns definition for Property listings
-const propertyColumns = [
+const salePropertyColumns = [
   { key: 'İlan No', title: 'No' },
   { key: 'Başlık', title: 'Başlık' },
-  { 
-    key: 'Fiyat', 
-    title: 'Fiyat', 
-    render: (row) => formatCurrency(row['Fiyat']) 
-  },
+  { key: 'Fiyat', title: 'Fiyat', render: (row) => formatCurrency(row['Fiyat']) },
   { key: 'Emlak Tipi', title: 'Emlak Tipi' },
   { key: 'Oda Tipi', title: 'Oda Tipi' },
   { key: 'İl', title: 'İl' },
   { key: 'İlçe', title: 'İlçe' },
   { key: 'İlan Durumu', title: 'Durum' },
   {
-    key: 'detay',
+    key: 'actions',
     title: 'İşlem',
     sortable: false,
-    render: (row, type, stateKey) => `
-      <button class="detailBtn" onclick="showListingDetail('${type}', ${row['İlan No']}, '${stateKey}')">Detay</button>
+    render: (row) => `
+      <div style="display: flex; gap: 6px;">
+        <button class="detailBtn" onclick="showListingDetail('sale', ${row['İlan No']}, 'saleProperties')">Detay</button>
+        <button class="soldBtn" style="background: #e6fcf5; color: #0ca678; border-color: #c3fae8;" onclick="openSoldModal(${row['İlan No']})">Satıldı</button>
+        <button class="removeBtn" style="background: #fff5f5; color: #fa5252; border-color: #ffe3e3;" onclick="removeListing(${row['İlan No']}, 'sale')">Kaldır</button>
+      </div>
     `
   }
+];
+
+const rentalPropertyColumns = [
+  { key: 'İlan No', title: 'No' },
+  { key: 'Başlık', title: 'Başlık' },
+  { key: 'Fiyat', title: 'Fiyat', render: (row) => formatCurrency(row['Fiyat']) },
+  { key: 'Emlak Tipi', title: 'Emlak Tipi' },
+  { key: 'Oda Tipi', title: 'Oda Tipi' },
+  { key: 'İl', title: 'İl' },
+  { key: 'İlçe', title: 'İlçe' },
+  { key: 'İlan Durumu', title: 'Durum' },
+  {
+    key: 'actions',
+    title: 'İşlem',
+    sortable: false,
+    render: (row) => `
+      <div style="display: flex; gap: 6px;">
+        <button class="detailBtn" onclick="showListingDetail('rental', ${row['İlan No']}, 'rentalProperties')">Detay</button>
+        <button class="rentedBtn" style="background: #e7f5ff; color: #228be6; border-color: #d0ebff;" onclick="openRentedModal(${row['İlan No']})">Kiralandı</button>
+        <button class="removeBtn" style="background: #fff5f5; color: #fa5252; border-color: #ffe3e3;" onclick="removeListing(${row['İlan No']}, 'rental')">Kaldır</button>
+      </div>
+    `
+  }
+];
+
+const salesHistoryColumns = [
+  { key: 'id', title: 'No' },
+  { key: 'İlan No', title: 'İlan No' },
+  { key: 'Başlık', title: 'Başlık' },
+  { key: 'Alıcı', title: 'Alıcı' },
+  { key: 'Satıcı', title: 'Satıcı' },
+  { key: 'Personel', title: 'Personel' },
+  { key: 'Satış Tarihi', title: 'Satış Tarihi' },
+  { key: 'Satış Tutarı', title: 'Tutar', render: (row) => formatCurrency(row['Satış Tutarı']) },
+  { key: 'Kazanılan Komisyon', title: 'Komisyon', render: (row) => formatCurrency(row['Kazanılan Komisyon']) }
+];
+
+const rentalContractsColumns = [
+  { key: 'id', title: 'No' },
+  { key: 'İlan No', title: 'İlan No' },
+  { key: 'Başlık', title: 'Başlık' },
+  { key: 'Kiracı', title: 'Kiracı' },
+  { key: 'Kiraya Veren', title: 'Kiraya Veren' },
+  { key: 'Personel', title: 'Personel' },
+  { key: 'Başlangıç Tarihi', title: 'Başlangıç' },
+  { key: 'Süre (Ay)', title: 'Süre (Ay)' },
+  { key: 'Bitiş Tarihi', title: 'Bitiş' },
+  { key: 'Kira Tutarı', title: 'Kira Tutarı', render: (row) => formatCurrency(row['Kira Tutarı']) }
 ];
 
 function showListingDetail(type, id, stateKey) {
@@ -513,7 +565,14 @@ async function loadCalisanlar() {
     { key: 'soyad', title: 'Soyad' },
     { key: 'telefon', title: 'Telefon' },
     { key: 'personel_tipi', title: 'Tip' },
-    { key: 'ise_baslama_tarihi', title: 'Başlama' }
+    { key: 'ise_baslama_tarihi', title: 'Başlama' },
+    {
+      key: 'actions',
+      title: 'İşlem',
+      render: (row) => `
+        <button class="removeBtn" style="background: #fff5f5; color: #fa5252; border-color: #ffe3e3; min-height: 28px; padding: 4px 8px; font-size: 12px;" onclick="deleteEmployee(${row.id})">Sil</button>
+      `
+    }
   ]);
 
   fillSelect(
@@ -529,12 +588,22 @@ async function loadIlanlar() {
     { key: 'id', title: 'No' },
     { key: 'baslik', title: 'Başlık' },
     { key: 'ilan_tipi', title: 'Tip' },
-    { key: 'fiyat', title: 'Fiyat' },
+    { key: 'fiyat', title: 'Fiyat', render: (row) => formatCurrency(row.fiyat) },
     { key: 'il', title: 'İl' },
     { key: 'ilce', title: 'İlçe' },
     { key: 'musteri', title: 'Müşteri' },
     { key: 'calisan', title: 'Çalışan' },
-    { key: 'ilan_durumu', title: 'Durum' }
+    { key: 'ilan_durumu', title: 'Durum' },
+    {
+      key: 'actions',
+      title: 'İşlem',
+      render: (row) => `
+        <div style="display: flex; gap: 6px;">
+          <button class="detailBtn" onclick="showMainListingDetail(${row.id})">Detay</button>
+          <button class="editBtn" style="background: #f8f9fa; color: #495057; border-color: #dee2e6;" onclick="showEditListingModal(${row.id})">Düzenle</button>
+        </div>
+      `
+    }
   ]);
   document.getElementById('ilanCount').textContent = state.ilanlar.length;
 }
@@ -559,21 +628,52 @@ async function refreshAll() {
   
   if (saleTableManager) await saleTableManager.load();
   if (rentalTableManager) await rentalTableManager.load();
+  if (salesHistoryTableManager) await salesHistoryTableManager.load();
+  if (rentalContractsTableManager) await rentalContractsTableManager.load();
 }
 
 function setupTabs() {
-  document.querySelectorAll('.tab').forEach((button) => {
+  const tabs = Array.from(document.querySelectorAll('.tab'));
+  tabs.forEach((button) => {
     button.addEventListener('click', async () => {
-      document.querySelectorAll('.tab').forEach((tab) => tab.classList.remove('active'));
-      document.querySelectorAll('.page').forEach((page) => page.classList.remove('active'));
-      button.classList.add('active');
-      const targetPage = button.dataset.page;
-      document.getElementById(targetPage).classList.add('active');
+      const activeTab = document.querySelector('.tab.active');
+      if (activeTab === button) return;
       
-      if (targetPage === 'saleProperties' && saleTableManager) {
+      const currentTabIndex = tabs.indexOf(activeTab);
+      const targetTabIndex = tabs.indexOf(button);
+      
+      const currentPageId = activeTab.dataset.page;
+      const targetPageId = button.dataset.page;
+      
+      const currentPage = document.getElementById(currentPageId);
+      const targetPage = document.getElementById(targetPageId);
+      
+      tabs.forEach((tab) => tab.classList.remove('active'));
+      button.classList.add('active');
+      
+      const direction = targetTabIndex > currentTabIndex ? 'right' : 'left';
+      
+      targetPage.style.display = 'block';
+      targetPage.className = `page ${direction === 'right' ? 'slide-in-right' : 'slide-in-left'}`;
+      
+      targetPage.offsetWidth; // force reflow
+      
+      currentPage.className = `page ${direction === 'right' ? 'slide-out-left' : 'slide-out-right'}`;
+      targetPage.className = 'page active';
+      
+      setTimeout(() => {
+        currentPage.style.display = 'none';
+        currentPage.className = 'page';
+      }, 400);
+
+      if (targetPageId === 'saleProperties' && saleTableManager) {
         await saleTableManager.load();
-      } else if (targetPage === 'rentalProperties' && rentalTableManager) {
+      } else if (targetPageId === 'rentalProperties' && rentalTableManager) {
         await rentalTableManager.load();
+      } else if (targetPageId === 'salesHistory' && salesHistoryTableManager) {
+        await salesHistoryTableManager.load();
+      } else if (targetPageId === 'rentalContracts' && rentalContractsTableManager) {
+        await rentalContractsTableManager.load();
       }
     });
   });
@@ -619,11 +719,30 @@ function setupForms() {
   document.getElementById('ilanForm').addEventListener('submit', async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
+    const data = formData(form);
+
+    // Frontend validation for customer role
+    const selectedMusteriId = Number(data.musteri_id);
+    const selectedMusteri = state.musteriler.find(m => m.id === selectedMusteriId);
+    const selectedIlanTipiId = Number(data.ilan_tipi_id);
+    const ilanTipiName = state.refs.ilan_tipleri?.find(item => Number(item.id) === selectedIlanTipiId)?.ad;
+    
+    if (selectedMusteri) {
+      const customerRoles = selectedMusteri.tipler ? selectedMusteri.tipler.split(', ') : [];
+      if (ilanTipiName === 'Satılık' && !customerRoles.includes('Satıcı')) {
+        showNotification('Seçilen müşteri "Satıcı" rolüne sahip olmalıdır.', 'error');
+        return;
+      }
+      if (ilanTipiName === 'Kiralık' && !customerRoles.includes('Kiraya Veren')) {
+        showNotification('Seçilen müşteri "Kiraya Veren" rolüne sahip olmalıdır.', 'error');
+        return;
+      }
+    }
 
     try {
       const response = await api('/api/ilan-ekle', {
         method: 'POST',
-        body: JSON.stringify(formData(form))
+        body: JSON.stringify(data)
       });
       form.reset();
       updateIlanTypeFields();
@@ -631,6 +750,84 @@ function setupForms() {
       showNotification(response.message || 'İlan başarıyla eklendi.', 'success');
     } catch (err) {
       showNotification(err.message || 'Operation failed. (İlan eklenemedi.)', 'error');
+    }
+  });
+
+  // Sold Form
+  document.getElementById('soldForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const ilanId = form.querySelector('[name="ilan_id"]').value;
+    const data = {
+      alici_id: form.querySelector('[name="alici_id"]').value,
+      personel_id: form.querySelector('[name="personel_id"]').value,
+      komisyon_tutari: form.querySelector('[name="komisyon_tutari"]').value
+    };
+    
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    
+    try {
+      const response = await api(`/api/sale-properties/${ilanId}/sold`, {
+        method: 'POST',
+        body: JSON.stringify(data)
+      });
+      closeModal('soldModal');
+      showNotification(response.message, 'success');
+      await refreshAll();
+    } catch (err) {
+      showNotification(err.message, 'error');
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+
+  // Rented Form
+  document.getElementById('rentedForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const ilanId = form.querySelector('[name="ilan_id"]').value;
+    const data = {
+      kiraci_id: form.querySelector('[name="kiraci_id"]').value,
+      personel_id: form.querySelector('[name="personel_id"]').value,
+      komisyon_tutari: form.querySelector('[name="komisyon_tutari"]').value
+    };
+    
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    
+    try {
+      const response = await api(`/api/rental-properties/${ilanId}/rented`, {
+        method: 'POST',
+        body: JSON.stringify(data)
+      });
+      closeModal('rentedModal');
+      showNotification(response.message, 'success');
+      await refreshAll();
+    } catch (err) {
+      showNotification(err.message, 'error');
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+
+  // Edit Listing Form
+  document.getElementById('editIlanForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const id = form.querySelector('[name="id"]').value;
+    const data = formData(form);
+    
+    try {
+      const response = await api(`/api/ilan-duzenle/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data)
+      });
+      closeModal('editModal');
+      showNotification(response.message, 'success');
+      await refreshAll();
+    } catch (err) {
+      showNotification(err.message, 'error');
     }
   });
 }
@@ -664,6 +861,181 @@ function setupRefreshButtons() {
   document.querySelector('#ilanForm [name="ilan_tipi_id"]').addEventListener('change', updateIlanTypeFields);
 }
 
+function openSoldModal(ilanId) {
+  const modal = document.getElementById('soldModal');
+  const form = document.getElementById('soldForm');
+  form.reset();
+  form.querySelector('[name="ilan_id"]').value = ilanId;
+  
+  const buyers = state.musteriler.filter(m => m.tipler && m.tipler.split(', ').includes('Alıcı'));
+  fillSelect(form.querySelector('[name="alici_id"]'), buyers.map(m => ({ id: m.id, ad: `${m.ad} ${m.soyad}` })), 'Alıcı Seçiniz');
+  fillSelect(form.querySelector('[name="personel_id"]'), state.calisanlar.map(c => ({ id: c.id, ad: `${c.ad} ${c.soyad}` })), 'Personel Seçiniz');
+  
+  const listing = state.saleProperties.find(p => p['İlan No'] === ilanId);
+  if (listing) {
+    const price = Number(listing['Fiyat']);
+    form.querySelector('[name="komisyon_tutari"]').value = Math.round(price * 0.05);
+  }
+
+  modal.classList.add('show');
+}
+
+function openRentedModal(ilanId) {
+  const modal = document.getElementById('rentedModal');
+  const form = document.getElementById('rentedForm');
+  form.reset();
+  form.querySelector('[name="ilan_id"]').value = ilanId;
+  
+  const tenants = state.musteriler.filter(m => m.tipler && m.tipler.split(', ').includes('Kiracı'));
+  fillSelect(form.querySelector('[name="kiraci_id"]'), tenants.map(m => ({ id: m.id, ad: `${m.ad} ${m.soyad}` })), 'Kiracı Seçiniz');
+  fillSelect(form.querySelector('[name="personel_id"]'), state.calisanlar.map(c => ({ id: c.id, ad: `${c.ad} ${c.soyad}` })), 'Personel Seçiniz');
+  
+  const listing = state.rentalProperties.find(p => p['İlan No'] === ilanId);
+  if (listing) {
+    const price = Number(listing['Fiyat']);
+    form.querySelector('[name="komisyon_tutari"]').value = price;
+  }
+
+  modal.classList.add('show');
+}
+
+function closeModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) {
+    modal.classList.remove('show');
+  }
+}
+
+async function removeListing(ilanId, type) {
+  const confirmed = confirm('Bu ilanı kalıcı olarak kaldırmak istediğinize emin misiniz?');
+  if (!confirmed) return;
+  
+  try {
+    const response = await api(`/api/ilan-sil/${ilanId}`, {
+      method: 'DELETE'
+    });
+    showNotification(response.message, 'success');
+    await refreshAll();
+  } catch (err) {
+    showNotification(err.message, 'error');
+  }
+}
+
+async function deleteEmployee(id) {
+  const confirmed = confirm('Bu çalışanı silmek istediğinize emin misiniz?');
+  if (!confirmed) return;
+  
+  try {
+    const response = await api(`/api/calisan-sil/${id}`, {
+      method: 'DELETE'
+    });
+    showNotification(response.message, 'success');
+    await loadCalisanlar();
+  } catch (err) {
+    showNotification(err.message, 'error');
+  }
+}
+
+async function showMainListingDetail(ilanId) {
+  const listing = state.ilanlar.find(i => i.id === ilanId);
+  if (!listing) {
+    showNotification('İlan detayları bulunamadı.', 'error');
+    return;
+  }
+  
+  const type = listing.ilan_tipi === 'Kiralık' ? 'rental' : 'sale';
+  const stateKey = type === 'rental' ? 'rentalProperties' : 'saleProperties';
+  
+  if (state[stateKey].length === 0) {
+    if (type === 'rental') {
+      await rentalTableManager.load();
+    } else {
+      await saleTableManager.load();
+    }
+  }
+  
+  showListingDetail(type, ilanId, stateKey);
+}
+
+async function showEditListingModal(ilanId) {
+  try {
+    const listing = await api(`/api/ilanlar/${ilanId}`);
+    
+    const modal = document.getElementById('editModal');
+    const form = document.getElementById('editIlanForm');
+    form.reset();
+    
+    form.querySelector('[name="id"]').value = listing.id;
+    form.querySelector('[name="baslik"]').value = listing.baslik;
+    form.querySelector('[name="fiyat"]').value = listing.fiyat;
+    
+    fillSelect(form.querySelector('[name="ilan_tipi_id"]'), state.refs.ilan_tipleri);
+    fillSelect(form.querySelector('[name="emlak_tipi_id"]'), state.refs.emlak_tipleri);
+    fillSelect(form.querySelector('[name="oda_tipi_id"]'), state.refs.oda_tipleri);
+    fillSelect(form.querySelector('[name="isitma_tipi_id"]'), state.refs.isitma_tipleri);
+    fillSelect(form.querySelector('[name="tapu_durumu_id"]'), state.refs.tapu_durumlari);
+    
+    fillSelect(
+      form.querySelector('[name="musteri_id"]'),
+      state.musteriler.map((m) => ({ id: m.id, ad: `${m.ad} ${m.soyad} - ${m.tipler || 'Tipsiz'}` }))
+    );
+    fillSelect(
+      form.querySelector('[name="calisan_id"]'),
+      state.calisanlar.map((c) => ({ id: c.id, ad: `${c.ad} ${c.soyad}` }))
+    );
+    
+    form.querySelector('[name="ilan_tipi_id"]').value = listing.ilan_tipi_id;
+    form.querySelector('[name="emlak_tipi_id"]').value = listing.emlak_tipi_id;
+    form.querySelector('[name="oda_tipi_id"]').value = listing.oda_tipi_id;
+    form.querySelector('[name="isitma_tipi_id"]').value = listing.isitma_tipi_id;
+    form.querySelector('[name="musteri_id"]').value = listing.musteri_id;
+    form.querySelector('[name="calisan_id"]').value = listing.calisan_id;
+    
+    form.querySelector('[name="il"]').value = listing.il;
+    form.querySelector('[name="ilce"]').value = listing.ilce;
+    form.querySelector('[name="mahalle"]').value = listing.mahalle || '';
+    form.querySelector('[name="adres"]').value = listing.adres || '';
+    form.querySelector('[name="yapim_yili"]').value = listing.yapim_yili;
+    form.querySelector('[name="metrekare"]').value = listing.metrekare;
+    form.querySelector('[name="bulundugu_kat"]').value = listing.bulundugu_kat || '';
+    form.querySelector('[name="toplam_kat"]').value = listing.toplam_kat || '';
+    form.querySelector('[name="balkon_sayisi"]').value = listing.balkon_sayisi || '';
+    form.querySelector('[name="wc_sayisi"]').value = listing.wc_sayisi || '';
+    
+    const selectedIlanTipi = state.refs.ilan_tipleri?.find(item => Number(item.id) === Number(listing.ilan_tipi_id))?.ad;
+    const isKiralik = selectedIlanTipi === 'Kiralık';
+    const isSatilik = selectedIlanTipi === 'Satılık';
+    
+    document.querySelectorAll('.editKiralikOnly').forEach((el) => {
+      el.style.display = isKiralik ? '' : 'none';
+    });
+    document.querySelectorAll('.editSatilikOnly').forEach((el) => {
+      el.style.display = isSatilik ? '' : 'none';
+    });
+    
+    if (isKiralik) {
+      form.querySelector('[name="aidat_tutari"]').value = listing.aidat_tutari || '';
+      form.querySelector('[name="depozito_tutari"]').value = listing.depozito_tutari || '';
+      form.querySelector('[name="esyali_mi"]').checked = Boolean(listing.esyali_mi);
+    } else if (isSatilik) {
+      form.querySelector('[name="tapu_durumu_id"]').value = listing.tapu_durumu_id || '';
+      form.querySelector('[name="krediye_uygun_mu"]').checked = Boolean(listing.krediye_uygun_mu);
+    }
+    
+    modal.classList.add('show');
+  } catch (err) {
+    showNotification(err.message, 'error');
+  }
+}
+
+window.openSoldModal = openSoldModal;
+window.openRentedModal = openRentedModal;
+window.closeModal = closeModal;
+window.removeListing = removeListing;
+window.deleteEmployee = deleteEmployee;
+window.showMainListingDetail = showMainListingDetail;
+window.showEditListingModal = showEditListingModal;
+
 async function main() {
   setupTabs();
   setupForms();
@@ -673,7 +1045,7 @@ async function main() {
   saleTableManager = new ListingTableManager({
     containerId: 'salePropertiesTable',
     apiUrl: '/api/sale-properties',
-    columns: propertyColumns,
+    columns: salePropertyColumns,
     type: 'sale',
     searchId: 'saleSearch',
     refreshId: 'refreshSale',
@@ -684,12 +1056,34 @@ async function main() {
   rentalTableManager = new ListingTableManager({
     containerId: 'rentalPropertiesTable',
     apiUrl: '/api/rental-properties',
-    columns: propertyColumns,
+    columns: rentalPropertyColumns,
     type: 'rental',
     searchId: 'rentalSearch',
     refreshId: 'refreshRental',
     countId: 'rentalCount',
     stateKey: 'rentalProperties'
+  });
+
+  salesHistoryTableManager = new ListingTableManager({
+    containerId: 'salesHistoryTable',
+    apiUrl: '/api/sales-history',
+    columns: salesHistoryColumns,
+    type: 'salesHistory',
+    searchId: 'salesHistorySearch',
+    refreshId: 'refreshSalesHistory',
+    countId: 'salesHistoryCount',
+    stateKey: 'salesHistory'
+  });
+
+  rentalContractsTableManager = new ListingTableManager({
+    containerId: 'rentalContractsTable',
+    apiUrl: '/api/rental-contracts',
+    columns: rentalContractsColumns,
+    type: 'rentalContracts',
+    searchId: 'rentalContractsSearch',
+    refreshId: 'refreshRentalContracts',
+    countId: 'rentalContractsCount',
+    stateKey: 'rentalContracts'
   });
 
   try {

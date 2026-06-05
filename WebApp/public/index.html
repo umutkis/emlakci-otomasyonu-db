@@ -23,7 +23,11 @@
         <button class="tab" data-page="ilanlar">İlanlar</button>
         <button class="tab" data-page="saleProperties">Satılık İlanlar</button>
         <button class="tab" data-page="rentalProperties">Kiralık İlanlar</button>
+        <button class="tab" data-page="salesHistory">Satış Geçmişi</button>
+        <button class="tab" data-page="rentalContracts">Kira Sözleşmeleri</button>
       </nav>
+
+      <div class="pagesContainer" id="pagesContainer">
 
       <section id="dashboard" class="page active">
         <div class="sectionHeader">
@@ -144,6 +148,38 @@
         </div>
         <div id="rentalPropertiesTable" class="tableWrap"></div>
       </section>
+
+      <!-- Satış Geçmişi -->
+      <section id="salesHistory" class="page">
+        <div class="sectionHeader">
+          <h2>Satış Geçmişi (Sales History)</h2>
+          <div class="toolbar">
+            <input type="text" id="salesHistorySearch" placeholder="Satışlarda ara..." class="searchInput">
+            <button id="refreshSalesHistory" class="secondary">🔄 Yenile</button>
+          </div>
+        </div>
+        <div class="tableMeta">
+          <span>Toplam: <strong id="salesHistoryCount">0</strong> kayıt</span>
+        </div>
+        <div id="salesHistoryTable" class="tableWrap"></div>
+      </section>
+
+      <!-- Kira Sözleşmeleri -->
+      <section id="rentalContracts" class="page">
+        <div class="sectionHeader">
+          <h2>Kira Sözleşmeleri (Rental Contracts)</h2>
+          <div class="toolbar">
+            <input type="text" id="rentalContractsSearch" placeholder="Sözleşmelerde ara..." class="searchInput">
+            <button id="refreshRentalContracts" class="secondary">🔄 Yenile</button>
+          </div>
+        </div>
+        <div class="tableMeta">
+          <span>Toplam: <strong id="rentalContractsCount">0</strong> kayıt</span>
+        </div>
+        <div id="rentalContractsTable" class="tableWrap"></div>
+      </section>
+
+      </div> <!-- End of pagesContainer -->
     </main>
 
     <!-- İlan Detay Modalı -->
@@ -155,6 +191,107 @@
         </div>
         <div class="modalBody" id="modalDetails">
           <!-- JS tarafından dinamik doldurulacak -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Satış Modalı -->
+    <div id="soldModal" class="modal">
+      <div class="modalContent">
+        <div class="modalHeader">
+          <h2>Mülk Satış İşlemi</h2>
+          <button class="closeBtn" onclick="closeModal('soldModal')">&times;</button>
+        </div>
+        <div class="modalBody">
+          <form id="soldForm" class="modalForm">
+            <input type="hidden" name="ilan_id">
+            <label style="margin-bottom: 12px;">Alıcı Seçiniz
+              <select name="alici_id" required></select>
+            </label>
+            <label style="margin-bottom: 12px;">Satış Personeli Seçiniz
+              <select name="personel_id" required></select>
+            </label>
+            <label style="margin-bottom: 16px;">Kazanılan Komisyon Tutarı (TL)
+              <input type="number" name="komisyon_tutari" min="1" required placeholder="Örn. 5000">
+            </label>
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+              <button type="button" class="secondary" onclick="closeModal('soldModal')">İptal</button>
+              <button type="submit" style="background: #10b981; color: white; border-color: #10b981;">Satışı Onayla</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Kiralama Modalı -->
+    <div id="rentedModal" class="modal">
+      <div class="modalContent">
+        <div class="modalHeader">
+          <h2>Mülk Kiralama İşlemi</h2>
+          <button class="closeBtn" onclick="closeModal('rentedModal')">&times;</button>
+        </div>
+        <div class="modalBody">
+          <form id="rentedForm" class="modalForm">
+            <input type="hidden" name="ilan_id">
+            <label style="margin-bottom: 12px;">Kiracı Seçiniz
+              <select name="kiraci_id" required></select>
+            </label>
+            <label style="margin-bottom: 12px;">Kiralama Personeli Seçiniz
+              <select name="personel_id" required></select>
+            </label>
+            <label style="margin-bottom: 16px;">Kazanılan Komisyon Tutarı (TL)
+              <input type="number" name="komisyon_tutari" min="1" required placeholder="Örn. 3000">
+            </label>
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+              <button type="button" class="secondary" onclick="closeModal('rentedModal')">İptal</button>
+              <button type="submit" style="background: #3b82f6; color: white; border-color: #3b82f6;">Kiralamayı Onayla</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- İlan Düzenleme Modalı -->
+    <div id="editModal" class="modal">
+      <div class="modalContent" style="width: min(800px, 95%);">
+        <div class="modalHeader">
+          <h2>İlan Düzenle</h2>
+          <button class="closeBtn" onclick="closeModal('editModal')">&times;</button>
+        </div>
+        <div class="modalBody">
+          <form id="editIlanForm" class="formGrid" style="border-bottom: none; margin-bottom: 0; padding-bottom: 0;">
+            <input type="hidden" name="id">
+            <label>Başlık <input name="baslik" required></label>
+            <label>Fiyat <input type="number" name="fiyat" min="1" required></label>
+            <label>İlan Tipi <select name="ilan_tipi_id" disabled></select></label>
+            <label>Emlak Tipi <select name="emlak_tipi_id" required></select></label>
+            <label>Oda Tipi <select name="oda_tipi_id" required></select></label>
+            <label>Isıtma Tipi <select name="isitma_tipi_id" required></select></label>
+            <label>Müşteri <select name="musteri_id" required></select></label>
+            <label>Çalışan <select name="calisan_id" required></select></label>
+            <label>İl <input name="il" required></label>
+            <label>İlçe <input name="ilce" required></label>
+            <label>Mahalle <input name="mahalle"></label>
+            <label>Adres <input name="adres"></label>
+            <label>Yapım Yılı <input type="number" name="yapim_yili" min="1801" required></label>
+            <label>Metrekare <input type="number" name="metrekare" min="1" required></label>
+            <label>Bulunduğu Kat <input type="number" name="bulundugu_kat"></label>
+            <label>Toplam Kat <input type="number" name="toplam_kat" min="1"></label>
+            <label>Balkon Sayısı <input type="number" name="balkon_sayisi" min="0"></label>
+            <label>WC Sayısı <input type="number" name="wc_sayisi" min="1"></label>
+            
+            <label class="editKiralikOnly">Aidat <input type="number" name="aidat_tutari" min="0"></label>
+            <label class="editKiralikOnly">Depozito <input type="number" name="depozito_tutari" min="0"></label>
+            <label class="editKiralikOnly inlineCheck"><input type="checkbox" name="esyali_mi"> Eşyalı</label>
+            
+            <label class="editSatilikOnly">Tapu Durumu <select name="tapu_durumu_id"></select></label>
+            <label class="editSatilikOnly inlineCheck"><input type="checkbox" name="krediye_uygun_mu"> Krediye Uygun</label>
+            
+            <div class="wide" style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 14px;">
+              <button type="button" class="secondary" onclick="closeModal('editModal')">İptal</button>
+              <button type="submit" style="background: #2563eb; color: white; border-color: #2563eb;">Güncelle</button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
