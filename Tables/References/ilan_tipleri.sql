@@ -1,4 +1,0 @@
-CREATE TABLE ilan_tipleri(
-    id INT PRIMARY KEY IDENTITY(1,1),
-    tip_adi NVARCHAR(50) NOT NULL
-)
