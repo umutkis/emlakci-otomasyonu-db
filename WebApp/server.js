@@ -205,9 +205,13 @@ app.post('/api/musteri-ekle', async (req, res) => {
         .input('tc', sql.VarChar(11), tc_kimlik_no || null)
         .input('telefon', sql.VarChar(11), telefon)
         .query(`
+          DECLARE @InsertedIds TABLE (id INT);
+
           INSERT INTO musteriler (ad, soyad, tc_kimlik_no, telefon)
-          OUTPUT inserted.id
+          OUTPUT inserted.id INTO @InsertedIds
           VALUES (@ad, @soyad, @tc, @telefon);
+
+          SELECT id FROM @InsertedIds;
         `);
 
       const musteriId = insert.recordset[0].id;
@@ -278,9 +282,13 @@ app.post('/api/calisan-ekle', async (req, res) => {
       .input('personel_tipi_id', sql.Int, Number(personel_tipi_id))
       .input('ise_baslama_tarihi', sql.Date, ise_baslama_tarihi)
       .query(`
+        DECLARE @InsertedIds TABLE (id INT);
+
         INSERT INTO calisanlar (ad, soyad, telefon, personel_tipi_id, ise_baslama_tarihi)
-        OUTPUT inserted.id
+        OUTPUT inserted.id INTO @InsertedIds
         VALUES (@ad, @soyad, @telefon, @personel_tipi_id, @ise_baslama_tarihi);
+
+        SELECT id FROM @InsertedIds;
       `);
     const calisan_id = result.recordset[0].id;
 
@@ -702,9 +710,13 @@ app.post('/api/sale-properties/:id/sold', async (req, res) => {
         .input('satis_tutari', sql.Int, listing.fiyat)
         .input('kazanc_tutari', sql.Int, commAmount)
         .query(`
+          DECLARE @InsertedIds TABLE (id INT);
+
           INSERT INTO satislar (ilan_id, alici_id, satici_id, personel_id, satis_tarihi, satis_tutari, kazanc_tutari)
-          OUTPUT inserted.id
+          OUTPUT inserted.id INTO @InsertedIds
           VALUES (@ilan_id, @alici_id, @satici_id, @personel_id, @satis_tarihi, @satis_tutari, @kazanc_tutari);
+
+          SELECT id FROM @InsertedIds;
         `);
 
       const satisId = salesRes.recordset[0].id;
@@ -812,9 +824,13 @@ app.post('/api/rental-properties/:id/rented', async (req, res) => {
         .input('sozlesme_suresi_ay', sql.Int, 12)
         .input('aylik_kira_tutari', sql.Int, listing.fiyat)
         .query(`
+          DECLARE @InsertedIds TABLE (id INT);
+
           INSERT INTO kira_sozlesmeleri (ilan_id, kiraci_id, kiraya_veren_id, calisan_id, sozlesme_baslangic_tarihi, sozlesme_suresi_ay, aylik_kira_tutari)
-          OUTPUT inserted.id
+          OUTPUT inserted.id INTO @InsertedIds
           VALUES (@ilan_id, @kiraci_id, @kiraya_veren_id, @calisan_id, @sozlesme_baslangic_tarihi, @sozlesme_suresi_ay, @aylik_kira_tutari);
+
+          SELECT id FROM @InsertedIds;
         `);
 
       const rentalId = rentalRes.recordset[0].id;
