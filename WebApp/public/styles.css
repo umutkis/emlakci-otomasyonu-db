@@ -1,6 +1,6 @@
 :root {
   color: #1f2937;
-  background: #f5f7fb;
+  background: #f8f7f7;
   font-family: Arial, Helvetica, sans-serif;
 }
 
@@ -10,7 +10,7 @@
 
 body {
   margin: 0;
-  background: #f5f7fb;
+  background: #f8f7f7;
 }
 
 .topbar {
@@ -83,7 +83,7 @@ h3 {
 
 button,
 .tab {
-  border: 1px solid #c8d2df;
+  border: 1px solid #67a1ee;
   background: #ffffff;
   color: #1f2937;
   min-height: 38px;
@@ -95,12 +95,12 @@ button,
 
 button:hover,
 .tab:hover {
-  background: #eef4ff;
+  background: #304ae0;
 }
 
 button[type='submit'] {
   background: #2563eb;
-  color: #ffffff;
+  color: rgba(255, 255, 255, 0.906);
   border-color: #2563eb;
 }
 
@@ -116,8 +116,8 @@ button[type='submit'] {
 
 .page {
   display: none;
-  background: #ffffff;
-  border: 1px solid #d9e0ea;
+  background: #9bc7f0;
+  border: 1px solid #a0bfeb;
   border-radius: 8px;
   padding: 22px;
 }
@@ -141,7 +141,7 @@ button[type='submit'] {
 }
 
 .metric {
-  border: 1px solid #d9e0ea;
+  border: 1px solid #96cff5;
   border-radius: 8px;
   padding: 16px;
   background: #fbfcfe;
@@ -179,7 +179,7 @@ input,
 select {
   width: 100%;
   min-height: 38px;
-  border: 1px solid #c8d2df;
+  border: 1px solid #2675db;
   border-radius: 6px;
   padding: 8px 10px;
   background: #ffffff;

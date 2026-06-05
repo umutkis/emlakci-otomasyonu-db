@@ -9,7 +9,6 @@ const state = {
   rentalContracts: []
 };
 
-const statusEl = document.getElementById('connectionStatus');
 
 let saleTableManager;
 let rentalTableManager;
@@ -508,17 +507,7 @@ function setupModalClose() {
   });
 }
 
-async function checkConnection() {
-  try {
-    await api('/api/health');
-    statusEl.textContent = 'SQL Server bağlı';
-    statusEl.className = 'status ok';
-  } catch (error) {
-    statusEl.textContent = 'SQL Server bağlantı hatası';
-    statusEl.className = 'status fail';
-    showNotification('Database connection failed. (SQL Server bağlantı hatası)', 'error');
-  }
-}
+
 
 async function loadReferences() {
   state.refs = await api('/api/references');
@@ -619,7 +608,6 @@ async function loadKomisyonOzeti() {
 }
 
 async function refreshAll() {
-  await checkConnection();
   await loadReferences();
   await loadMusteriler();
   await loadCalisanlar();
