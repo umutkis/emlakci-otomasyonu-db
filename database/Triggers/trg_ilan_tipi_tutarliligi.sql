@@ -13,7 +13,7 @@ BEGIN
         WHERE it.tip_adi <> N'Kiralık'
     )
     BEGIN
-        THROW 50101, 'Kiralik ilanlar tablosuna sadece Kiralik tipindeki ilanlar eklenebilir.', 1;
+        ;THROW 50101, 'Kiralik ilanlar tablosuna sadece Kiralik tipindeki ilanlar eklenebilir.', 1;
     END;
 
     IF EXISTS (
@@ -22,7 +22,7 @@ BEGIN
         INNER JOIN satilik_ilanlar s ON s.ilan_id = ins.ilan_id
     )
     BEGIN
-        THROW 50102, 'Bir ilan ayni anda hem Kiralik hem Satilik olamaz.', 1;
+        ;THROW 50102, 'Bir ilan ayni anda hem Kiralik hem Satilik olamaz.', 1;
     END;
 END;
 GO
@@ -39,12 +39,10 @@ BEGIN
         FROM inserted ins
         INNER JOIN ilanlar i ON i.id = ins.ilan_id
         INNER JOIN ilan_tipleri it ON it.id = i.ilan_tipi_id
-        LEFT JOIN satilik_ilanlar s ON s.ilan_id = i.id
         WHERE it.tip_adi <> N'Satılık'
-           OR s.ilan_id IS NULL
     )
     BEGIN
-        THROW 50103, 'Satilik ilanlar tablosuna sadece Satilik tipindeki ilanlar eklenebilir.', 1;
+        ;THROW 50103, 'Satilik ilanlar tablosuna sadece Satilik tipindeki ilanlar eklenebilir.', 1;
     END;
 
     IF EXISTS (
@@ -53,7 +51,7 @@ BEGIN
         INNER JOIN kiralik_ilanlar k ON k.ilan_id = ins.ilan_id
     )
     BEGIN
-        THROW 50104, 'Bir ilan ayni anda hem Satilik hem Kiralik olamaz.', 1;
+        ;THROW 50104, 'Bir ilan ayni anda hem Satilik hem Kiralik olamaz.', 1;
     END;
 END;
 GO
@@ -75,7 +73,7 @@ BEGIN
            OR s.ilan_id IS NULL
     )
     BEGIN
-        THROW 50105, 'Satis kaydi sadece Satilik tipindeki ilan icin olusturulabilir.', 1;
+        ;THROW 50105, 'Satis kaydi sadece Satilik tipindeki ilan icin olusturulabilir.', 1;
     END;
 END;
 GO
@@ -97,7 +95,7 @@ BEGIN
            OR k.ilan_id IS NULL
     )
     BEGIN
-        THROW 50106, 'Kira sozlesmesi sadece Kiralik tipindeki ilan icin olusturulabilir.', 1;
+        ;THROW 50106, 'Kira sozlesmesi sadece Kiralik tipindeki ilan icin olusturulabilir.', 1;
     END;
 END;
 GO

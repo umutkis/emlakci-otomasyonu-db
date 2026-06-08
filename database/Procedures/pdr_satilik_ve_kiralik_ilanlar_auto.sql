@@ -37,7 +37,7 @@ BEGIN
 
     IF @IlanTipiAdi IS NULL
     BEGIN
-        THROW 50001, 'Gecersiz ilan_tipi_id.', 1;
+        ;THROW 50001, 'Gecersiz ilan_tipi_id.', 1;
     END;
 
     IF @IlanDurumuId IS NULL
@@ -49,12 +49,12 @@ BEGIN
 
     IF @IlanDurumuId IS NULL
     BEGIN
-        THROW 50002, 'Aktif ilan durumu bulunamadi.', 1;
+        ;THROW 50002, 'Aktif ilan durumu bulunamadi.', 1;
     END;
 
     IF @IlanTipiAdi = N'Satılık' AND @TapuDurumuId IS NULL
     BEGIN
-        THROW 50003, 'Satilik ilan icin tapu_durumu_id zorunludur.', 1;
+        ;THROW 50003, 'Satilik ilan icin tapu_durumu_id zorunludur.', 1;
     END;
 
     BEGIN TRANSACTION;
@@ -134,7 +134,7 @@ BEGIN
     END
     ELSE
     BEGIN
-        THROW 50004, 'Ilan tipi Kiralik veya Satilik olmali.', 1;
+        ;THROW 50004, 'Ilan tipi Kiralik veya Satilik olmali.', 1;
     END;
 
     COMMIT TRANSACTION;
