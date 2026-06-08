@@ -21,7 +21,6 @@ WHEN NOT MATCHED THEN
 MERGE ilan_durumlari AS target
 USING (VALUES
     (N'Aktif'),
-    (N'Pasif'),
     (N'Kiralandı'),
     (N'Satıldı')
 ) AS source (durum_adi)

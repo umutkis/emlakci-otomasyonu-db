@@ -17,7 +17,7 @@ BEGIN
         )
     )
     BEGIN
-        THROW 50201, 'Satis alicisi Alici musteri tipine sahip olmalidir.', 1;
+        ;THROW 50201, 'Satis alicisi Alici musteri tipine sahip olmalidir.', 1;
     END;
 
     IF EXISTS (
@@ -32,7 +32,7 @@ BEGIN
         )
     )
     BEGIN
-        THROW 50202, 'Satis saticisi Satici musteri tipine sahip olmalidir.', 1;
+        ;THROW 50202, 'Satis saticisi Satici musteri tipine sahip olmalidir.', 1;
     END;
 END;
 GO
@@ -56,7 +56,7 @@ BEGIN
         )
     )
     BEGIN
-        THROW 50203, 'Kira sozlesmesi kiracisi Kiraci musteri tipine sahip olmalidir.', 1;
+        ;THROW 50203, 'Kira sozlesmesi kiracisi Kiraci musteri tipine sahip olmalidir.', 1;
     END;
 
     IF EXISTS (
@@ -71,7 +71,7 @@ BEGIN
         )
     )
     BEGIN
-        THROW 50204, 'Kira sozlesmesi kiraya vereni Kiraya Veren musteri tipine sahip olmalidir.', 1;
+        ;THROW 50204, 'Kira sozlesmesi kiraya vereni Kiraya Veren musteri tipine sahip olmalidir.', 1;
     END;
 END;
 GO

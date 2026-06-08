@@ -30,7 +30,7 @@ BEGIN
         WHERE yapim_yili > YEAR(GETDATE())
     )
     BEGIN
-        THROW 50301, 'Yapim yili gelecek bir yil olamaz.', 1;
+        ;THROW 50301, 'Yapim yili gelecek bir yil olamaz.', 1;
     END;
 
     IF EXISTS (
@@ -47,7 +47,7 @@ BEGIN
           )
     )
     BEGIN
-        THROW 50302, 'Satilik ilan sahibi Satici musteri tipine sahip olmalidir.', 1;
+        ;THROW 50302, 'Satilik ilan sahibi Satici musteri tipine sahip olmalidir.', 1;
     END;
 
     IF EXISTS (
@@ -64,7 +64,7 @@ BEGIN
           )
     )
     BEGIN
-        THROW 50303, 'Kiralik ilan sahibi Kiraya Veren musteri tipine sahip olmalidir.', 1;
+        ;THROW 50303, 'Kiralik ilan sahibi Kiraya Veren musteri tipine sahip olmalidir.', 1;
     END;
 END;
 GO

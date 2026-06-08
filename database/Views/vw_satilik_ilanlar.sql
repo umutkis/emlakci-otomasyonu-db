@@ -61,5 +61,6 @@ INNER JOIN tapu_durumlari
 INNER JOIN calisanlar
     ON ilanlar.calisan_id = calisanlar.id
 INNER JOIN personel_tipleri
-    ON calisanlar.personel_tipi_id = personel_tipleri.id;
+    ON calisanlar.personel_tipi_id = personel_tipleri.id
+WHERE ilan_durumlari.durum_adi = N'Aktif';
 GO

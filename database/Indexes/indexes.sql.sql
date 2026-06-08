@@ -1,4 +1,4 @@
---aktif, pasif, kiralandı, satıldı gibi ilan durunmlarını hızlandırma için yapıldı
+--aktif, kiralandı, satıldı gibi ilan durumlarını hızlandırma için yapıldı
 CREATE INDEX idx_ilanlar_durum
 ON ilanlar (ilan_durumu_id);
 
@@ -52,3 +52,12 @@ ON komisyonlar (satis_id);
 
 CREATE INDEX idx_musteri_tipi_atamalari_tip
 ON musteri_tipi_atamalari (musteri_tipi_id);
+
+-- komisyon mükerrerliğini önlemek için filtrelenmiş tekil indeksler
+CREATE UNIQUE NONCLUSTERED INDEX UX_komisyonlar_satis 
+ON komisyonlar (satis_id) 
+WHERE satis_id IS NOT NULL;
+
+CREATE UNIQUE NONCLUSTERED INDEX UX_komisyonlar_kira 
+ON komisyonlar (kira_sozlesmesi_id) 
+WHERE kira_sozlesmesi_id IS NOT NULL;
